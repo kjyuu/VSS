@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "vsapp"
+version = "0.1.0"
+description = ""
+authors = ["kjyu <jakwojtowicz@student.agh.edu.pl>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"
+numpy = "^1.26.1"
+opencv-python = "^4.8.1.78"
+dearpygui = "^1.10.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

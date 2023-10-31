@@ -1,6 +1,6 @@
 import dearpygui.dearpygui as dpg
-import dearpygui.demo as demo
-
+import numpy as np
+import cv2
 dpg.create_context()
 dpg.create_viewport(title='Vision System Studio', width=1100, height=1200)
 with dpg.window(tag="Primary Window"):
