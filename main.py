@@ -1,6 +1,6 @@
 import dearpygui.dearpygui as dpg
-import dearpygui.demo as demo
-
+import numpy as np
+import cv2
 dpg.create_context()
 dpg.create_viewport(title='Vision System Studio', width=1100, height=1200)
 with dpg.window(tag="Primary Window"):
@@ -26,7 +26,7 @@ with dpg.window(tag="Primary Window"):
     dpg.add_button(label="New Project")
     dpg.add_input_text(label="string",default_value="Quick brown fox")
 dpg.setup_dearpygui()
-dpg.show_viewport()
 dpg.set_primary_window("Primary Window",True)
+dpg.show_viewport()
 dpg.start_dearpygui()
 dpg.destroy_context()
