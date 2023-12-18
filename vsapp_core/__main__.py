@@ -1,4 +1,6 @@
 import dearpygui.dearpygui as dpg
+from filedialog20.fdialog import FileDialog
+
 import numpy as np
 import cv2
 import array
@@ -42,7 +44,7 @@ data=np.asfarray(data,dtype='f')
 texture_data_frame=np.true_divide(data,255.0)
 with dpg.texture_registry():
     dpg.add_raw_texture(frame_width,frame_height,texture_data_frame,format=dpg.mvFormat_Float_rgb,tag="texture_cam",label="tex_1")
-
+    
 with dpg.font_registry():
         dpg.add_font("assets/fonts/quicksand/Quicksand_Bold.otf",18)
         dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Bold.ttf",18)
@@ -53,7 +55,7 @@ with dpg.font_registry():
 dpg.bind_font(default_font)
 dpg.configure_app(docking=True, docking_space=False)
 with dpg.window(tag="Primary Window"): # main window of the program
-    dpg.add_text("Welcome to Vision System Studio!")
+    dpg.add_text("Welcome to the App!")
     with dpg.menu_bar(): # menu bar
         with dpg.menu(label="Project"):
             dpg.add_menu_item(label="New")
@@ -86,17 +88,20 @@ with dpg.window(tag="Primary Window"): # main window of the program
                         with dpg.child_window(autosize_y=True) as mainColWind1:
                             with dpg.file_dialog(label="Demo File Dialog", width=800, height=400, show=False, callback=lambda s, a, u : print(s, a, u), tag="__demo_filedialog"):
                                 dpg.add_file_extension(".*", color=(255, 255, 255, 255))
-                                dpg.add_file_extension(".jpg", color=(0, 255, 0, 255))
-                                dpg.add_file_extension(".png", color=(0, 255, 0, 255))
-                                dpg.add_file_extension(".bmp", color=(0, 255, 0, 255))
-                                dpg.add_file_extension(".gif", color=(0, 255, 0, 255))
+                                #dpg.add_file_extension(".jpg", color=(0, 255, 0, 255))
+                                #dpg.add_file_extension(".png", color=(0, 255, 0, 255))
+                                #dpg.add_file_extension(".bmp", color=(0, 255, 0, 255))
+                                #dpg.add_file_extension(".gif", color=(0, 255, 0, 255))
                                 #dpg.add_button(label="Button on file dialog")
-                            dpg.add_button(label="Show File Selector", user_data=dpg.last_container(), callback=lambda s, a, u: dpg.configure_item(u, show=True))
+                            dpg.add_button(label="Show File Selector", user_data=dpg.last_container(), callback=lambda s, a, u:  dpg.configure_item(u, show=True))
                             pass
                         with dpg.child_window(autosize_y=True) as mainColWind2:
-                            for param in cam_params:
-                                dpg.add_input_int(label=param,default_value=cam1.get(param),callback=set_cam_param,user_data=param)
-
+                            #for param in cam_params:
+                            #    dpg.add_input_int(label=param,default_value=cam1.get(param),callback=set_cam_param,user_data=param)
+                            width, height, channels, data = dpg.load_image("assets/images/o1z01.bmp")
+                            with dpg.texture_registry():
+                                dpg.add_static_texture(width=width, height=height, default_value=data, tag="tex41")
+                            dpg.add_image("tex41")
                         with dpg.child_window(autosize_y=True) as mainColWind3:
                             dpg.add_button(label="thirds")
                             dpg.add_image("texture_cam")

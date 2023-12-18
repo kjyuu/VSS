@@ -10,6 +10,7 @@ python = ">=3.12,<3.13"
 numpy = "^1.26.1"
 opencv-python = "^4.8.1.78"
 dearpygui = "^1.10.1"
+psutil = "^5.9.6"
 
 
 [build-system]
