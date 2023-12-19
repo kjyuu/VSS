@@ -162,3 +162,5 @@ cython_debug/
 .vscode/launch.json
 demo.py
 tutorial.py
+*.pkl
+ignored/

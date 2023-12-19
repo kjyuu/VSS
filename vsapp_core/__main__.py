@@ -98,8 +98,10 @@ with dpg.window(tag="Primary Window"): # main window of the program
                         with dpg.child_window(autosize_y=True) as mainColWind2:
                             #for param in cam_params:
                             #    dpg.add_input_int(label=param,default_value=cam1.get(param),callback=set_cam_param,user_data=param)
+                            dpg.add_input_text(label="Text Input 1", source="string_value")
+                            dpg.add_button(label="button load image")
                             width, height, channels, data = dpg.load_image("assets/images/o1z01.bmp")
-                            with dpg.texture_registry():
+                            with dpg.texture_registry(show=True):
                                 dpg.add_static_texture(width=width, height=height, default_value=data, tag="tex41")
                             dpg.add_image("tex41")
                         with dpg.child_window(autosize_y=True) as mainColWind3:
