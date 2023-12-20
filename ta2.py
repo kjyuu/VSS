@@ -13,7 +13,7 @@ dpg.setup_dearpygui()
 # Definitions
 frameSize = (640,480)
 chessboardSize=(5,5)
-images = glob.glob('assets\\images\\calib_example\\*.tif')
+images = glob.glob('assets\\images\\*.bmp')
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
@@ -23,47 +23,8 @@ objp = objp * size_of_chessboard_squares_mm
 # Arrays to store object points and image points from all the images.
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
-def update_dynamic_texture(sender, app_data, user_data):
-    new_color = dpg.get_value(sender)
-    new_color[0] = new_color[0] / 255
-    new_color[1] = new_color[1] / 255
-    new_color[2] = new_color[2] / 255
-    new_color[3] = new_color[3] / 255
-
-    for i in range(0, 100 * 100 * 4):
-        raw_data[i] = new_color[i % 4]
 def func():
     print('func')
-    dpg.configure_item(win,pos=(400,400))
-    # for image in images:
-    #     print(image)
-    #     imgData = cv.imread(image)
-    #     print(imgData)
-    #     time.sleep(1)
-    #     print("slept")
-    #     data=np.flip(imgData,2)
-    #     data=data.ravel()
-    #     data=np.asfarray(data,dtype='f')
-    #     texture_data_frame=np.true_divide(data,255.0)
-    #     #dpg.set_value("texture_cam",texture_data_frame)
-    #     dpg.set_value("raw_tex_1",texture_data_frame)
-        
-    #     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-
-    #     # Find the chess board corners
-    #     ret, corners = cv.findChessboardCorners(gray, chessboardSize, None)
-    #     print(ret)
-    #     # If found, add object points, image points (after refining them)
-    #     if ret == True:
-
-    #         objpoints.append(objp)
-    #         corners2 = cv.cornerSubPix(gray, corners, (11,11), (-1,-1), criteria)
-    #         imgpoints.append(corners)
-
-    #         # Draw and display the corners
-    #         cv.drawChessboardCorners(img, chessboardSize, corners2, ret)
-    #         cv.imshow('img', img)
-    #         cv.waitKey(1000)
     for fname in images:
         print(fname)
         img = cv2.imread(fname)
@@ -76,23 +37,22 @@ def func():
         dlt = cv2.dilate(msk, krn, iterations=5)
         res = 255 - cv2.bitwise_and(dlt, msk)
         res = np.uint8(res)
-        ret, corners = cv2.findChessboardCorners(res, (5, 5),flags=cv2.CALIB_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE)
-        width, height, channels, data = dpg.load_image(res)
-        t=dpg.add_dynamic_texture(width=width, height=height, default_value=data,parent="texreg")
+        ret, corners = cv2.findChessboardCorners(res, chessboardSize,flags=cv2.CALIB_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE)
+        img1D=np.flip(img,2)
+        img1D=img1D.ravel()
+        img1D=np.asfarray(img1D,dtype='f')
+        img1D=np.true_divide(img1D,255.0)
+        width, height, channels, data = dpg.load_image(fname)
+        print(width, img.shape[1],height,img.shape[0],img1D.size)
+        t=dpg.add_dynamic_texture(width=img.shape[1], height=img.shape[0], default_value=img1D,parent="tex_reg")
         print(t)
-        dpg.add_image(t,parent="win")
+        #dpg.add_image(t,parent="win")
         if ret:
             print(corners)
-            fnl = cv2.drawChessboardCorners(img, (7, 7), corners, ret)
-            cv2.imshow("fnl", fnl)
-            cv2.waitKey(0)
+            fnl = cv2.drawChessboardCorners(img,chessboardSize, corners, ret)
         else:
             print("No Checkerboard Found")
         # Find the chess board corners
-        width, height, channels, data = dpg.load_image(fname)
-        t=dpg.add_dynamic_texture(width=width, height=height, default_value=data,parent="texreg")
-        print(t)
-        dpg.add_image(t,parent="win")
         # ret, corners = cv2.findChessboardCorners(img, (7,6), None)
         # # If found, add object points, image points (after refining them)
         # if ret == True:
@@ -123,6 +83,28 @@ with dpg.window(label="Image tutorial",tag="win") as win:
             pass
     print(dpg.get_item_pos(tex_reg))
     dpg.add_button(label="start script",callback=func)
+    func()
+    # fname='assets\\images\\calib_example\\Image4.tif'
+    # img = cv2.imread(fname)
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # lwr = np.array([0, 0, 143])
+    # upr = np.array([179, 61, 252])
+    # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    # msk = cv2.inRange(hsv, lwr, upr)
+    # krn = cv2.getStructuringElement(cv2.MORPH_RECT, (50, 30))
+    # dlt = cv2.dilate(msk, krn, iterations=5)
+    # res = 255 - cv2.bitwise_and(dlt, msk)
+    # res = np.uint8(res)
+    # ret, corners = cv2.findChessboardCorners(res, chessboardSize,flags=cv2.CALIBS_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE)
+    # img1D=np.flip(img,2)
+    # img1D=img1D.ravel()
+    # img1D=np.asfarray(img1D,dtype='f')
+    # img1D=np.true_divide(img1D,255.0)
+    # #width, height, channels, data = dpg.load_image(fname)
+    # #print(width, img.shape[1],height,img.shape[0],img1D.size)
+    # t=dpg.add_dynamic_texture(width=img.shape[1], height=img.shape[0],default_value=img1D, format=dpg.mvFormat_Float_rgba,parent="tex_reg")
+    # #dpg.add_image(t,parent="win")
+    
     dpg.add_image("raw_tex_1")
     with dpg.font_registry():
         default_font=dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Medium.ttf",20)
@@ -135,6 +117,7 @@ with dpg.window(label="Image tutorial",tag="win") as win:
 dpg.show_viewport()
 dpg.set_viewport_always_top(False)
 dpg.show_metrics()
+
 while dpg.is_dearpygui_running():
     dpg.render_dearpygui_frame()
 dpg.destroy_context()
@@ -151,7 +134,7 @@ pickle.dump(dist, open( "ignored/dist.pkl", "wb" ))
 
 ############## UNDISTORTION #####################################################
 
-img = cv.imread('assets/images/calib_example/Image4.tif')
+img = cv.imread('assets\\images\\calib_example\\Image4.tif')
 h,  w = img.shape[:2]
 newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
 
