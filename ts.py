@@ -5,7 +5,7 @@ import numpy as np
 import glob
 dpg.create_context()
 dpg.create_viewport(title='Custom Title', width=850, height=800)
-
+dpg.set_viewport_always_top(True)
 dpg.setup_dearpygui()
 def func():
     dpg.show_tool(dpg.mvTool_ItemRegistry)
@@ -24,7 +24,7 @@ def func():
 
         res = np.uint8(res)
         ret, corners = cv2.findChessboardCorners(res, (5, 5),flags=cv2.CALIB_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE)
-        width, height, channels, data = dpg.load_image(res)
+        width, height, channels, data = dpg.load_image(fname)
         t=dpg.add_dynamic_texture(width=width, height=height, default_value=data,parent="texreg")
         print(t)
         dpg.add_image(t,parent="win")
@@ -58,7 +58,7 @@ width, height, channels, data = dpg.load_image("assets/images/o1z01.bmp")
 with dpg.texture_registry(show=True,tag="texreg"):
     dpg.add_dynamic_texture(width=width, height=height, default_value=data, tag="tex41")
     pass
-with dpg.window(label="Image tutorial",tag="win"):
+with dpg.window(label="Image tutorial",tag="win") as win:
     dpg.add_image("tex41")
     dpg.add_button(label="start",callback=func)
     #dpg.add_image("texture_cam")
@@ -79,8 +79,11 @@ objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 images = glob.glob('assets/images/*.jpg')
 
+#dpg.focus_item(win)
+#dpg.set_primary_window(win, True)
 cv2.destroyAllWindows()
 dpg.show_viewport()
+dpg.set_viewport_always_top(False)
 dpg.show_metrics()
 while dpg.is_dearpygui_running():
     dpg.render_dearpygui_frame()

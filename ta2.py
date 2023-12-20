@@ -7,13 +7,13 @@ import array
 import time
 dpg.create_context()
 dpg.create_viewport(title='Custom Title', width=1300, height=900)
-
+dpg.set_viewport_always_top(True)
 dpg.setup_dearpygui()
 
 # Definitions
 frameSize = (640,480)
 chessboardSize=(5,5)
-images = glob.glob('assets/images/calib_example/*.tif')
+images = glob.glob('assets\\images\\calib_example\\*.tif')
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
@@ -34,6 +34,7 @@ def update_dynamic_texture(sender, app_data, user_data):
         raw_data[i] = new_color[i % 4]
 def func():
     print('func')
+    dpg.configure_item(win,pos=(400,400))
     # for image in images:
     #     print(image)
     #     imgData = cv.imread(image)
@@ -111,11 +112,16 @@ for i in range(0,frameSize[0]*frameSize[1]):
     texture_data.append(100/255)
     texture_data.append(255/255)
 raw_data=array.array('f',texture_data)
-with dpg.texture_registry(show=True,tag="tex_reg"):
-    dpg.add_raw_texture(frameSize[0],frameSize[1],raw_data,format=dpg.mvFormat_Float_rgba,tag="raw_tex_1")
-    #dpg.add_dynamic_texture(width=frameSize[0], height=frameSize[1], default_value=images[1], tag="tex41")
-    pass
-with dpg.window(label="Image tutorial",tag="win"):
+
+#dpg.set_item_pos(tex_reg,pos=(400,400))
+#dpg.configure_item(tex_reg,pos=(400,400))
+with dpg.window(label="Image tutorial",tag="win") as win:
+    with dpg.group() as tex_reg:
+        with dpg.texture_registry(show=True,tag="tex_reg"):
+            dpg.add_raw_texture(frameSize[0],frameSize[1],raw_data,format=dpg.mvFormat_Float_rgba,tag="raw_tex_1")
+            #dpg.add_dynamic_texture(width=frameSize[0], height=frameSize[1], default_value=images[1], tag="tex41")
+            pass
+    print(dpg.get_item_pos(tex_reg))
     dpg.add_button(label="start script",callback=func)
     dpg.add_image("raw_tex_1")
     with dpg.font_registry():
@@ -127,6 +133,7 @@ with dpg.window(label="Image tutorial",tag="win"):
 
     dpg.show_tool(dpg.mvTool_ItemRegistry)
 dpg.show_viewport()
+dpg.set_viewport_always_top(False)
 dpg.show_metrics()
 while dpg.is_dearpygui_running():
     dpg.render_dearpygui_frame()

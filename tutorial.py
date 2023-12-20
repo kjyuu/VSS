@@ -5,6 +5,7 @@ import numpy as np
 import glob
 dpg.create_context()
 dpg.create_viewport(title='Custom Title', width=850, height=1100)
+dpg.set_viewport_always_top(True)
 
 dpg.setup_dearpygui()
 def func():
@@ -75,6 +76,7 @@ images = glob.glob('assets/images/*.bmp')
 
 cv2.destroyAllWindows()
 dpg.show_viewport()
+dpg.set_viewport_always_top(False)
 dpg.show_metrics()
 while dpg.is_dearpygui_running():
     ret,frame=cam1.read()

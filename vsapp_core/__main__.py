@@ -5,7 +5,8 @@ import numpy as np
 import cv2
 import array
 dpg.create_context()
-dpg.create_viewport(title='Engineering Thesis App', width=1920, height=1080)
+dpg.create_viewport(title='Engineering Thesis App', width=1600, height=900)
+dpg.set_viewport_always_top(True)
 #dpg.configure_viewport("Vision System Studio",clear_color=[255,0,0,255],decorated=True)
 
 def set_cam_param(sender,app_data,user_data):
@@ -14,36 +15,37 @@ def set_cam_param(sender,app_data,user_data):
     print("user data is:",user_data)
     cam1.set(user_data,app_data)
 
-cam1=cv2.VideoCapture(0)
-ret,frame=cam1.read()
-frame_width=cam1.get(cv2.CAP_PROP_FRAME_WIDTH)
-frame_height=cam1.get(cv2.CAP_PROP_FRAME_HEIGHT)
-video_fps=cam1.get(cv2.CAP_PROP_FPS)
-print("W,H,FPS:",frame_width,frame_height,video_fps)
-cam_params = [
-cv2.CAP_PROP_FRAME_WIDTH,
-cv2.CAP_PROP_FRAME_HEIGHT,
-cv2.CAP_PROP_FPS,
-cv2.CAP_PROP_CONTRAST,
-cv2.CAP_PROP_BRIGHTNESS,
-cv2.CAP_PROP_SATURATION,
-cv2.CAP_PROP_HUE,
-cv2.CAP_PROP_GAIN,
-cv2.CAP_PROP_EXPOSURE,
-cv2.CAP_PROP_SHARPNESS,
-cv2.CAP_PROP_GAMMA,
-cv2.CAP_PROP_TEMPERATURE,
-cv2.CAP_PROP_TRIGGER,
-cv2.CAP_PROP_ZOOM,
-cv2.CAP_PROP_FOCUS,
-cv2.CAP_PROP_BACKLIGHT,
-cv2.CAP_PROP_PAN]
-data=np.flip(frame,2)
-data=data.ravel()
-data=np.asfarray(data,dtype='f')
-texture_data_frame=np.true_divide(data,255.0)
-with dpg.texture_registry():
-    dpg.add_raw_texture(frame_width,frame_height,texture_data_frame,format=dpg.mvFormat_Float_rgb,tag="texture_cam",label="tex_1")
+# DISPLAYING A CAMERA IMAGE
+# cam1=cv2.VideoCapture(0)
+# ret,frame=cam1.read()
+# frame_width=cam1.get(cv2.CAP_PROP_FRAME_WIDTH)
+# frame_height=cam1.get(cv2.CAP_PROP_FRAME_HEIGHT)
+# video_fps=cam1.get(cv2.CAP_PROP_FPS)
+# print("W,H,FPS:",frame_width,frame_height,video_fps)
+# cam_params = [
+# cv2.CAP_PROP_FRAME_WIDTH,
+# cv2.CAP_PROP_FRAME_HEIGHT,
+# cv2.CAP_PROP_FPS,
+# cv2.CAP_PROP_CONTRAST,
+# cv2.CAP_PROP_BRIGHTNESS,
+# cv2.CAP_PROP_SATURATION,
+# cv2.CAP_PROP_HUE,
+# cv2.CAP_PROP_GAIN,
+# cv2.CAP_PROP_EXPOSURE,
+# cv2.CAP_PROP_SHARPNESS,
+# cv2.CAP_PROP_GAMMA,
+# cv2.CAP_PROP_TEMPERATURE,
+# cv2.CAP_PROP_TRIGGER,
+# cv2.CAP_PROP_ZOOM,
+# cv2.CAP_PROP_FOCUS,
+# cv2.CAP_PROP_BACKLIGHT,
+# cv2.CAP_PROP_PAN]
+# data=np.flip(frame,2)
+# data=data.ravel()
+# data=np.asfarray(data,dtype='f')
+# texture_data_frame=np.true_divide(data,255.0)
+# with dpg.texture_registry():
+#    dpg.add_raw_texture(frame_width,frame_height,texture_data_frame,format=dpg.mvFormat_Float_rgb,tag="texture_cam",label="tex_1")
     
 with dpg.font_registry():
         dpg.add_font("assets/fonts/quicksand/Quicksand_Bold.otf",18)
@@ -106,18 +108,19 @@ with dpg.window(tag="Primary Window"): # main window of the program
                             dpg.add_image("tex41")
                         with dpg.child_window(autosize_y=True) as mainColWind3:
                             dpg.add_button(label="thirds")
-                            dpg.add_image("texture_cam")
+                            # dpg.add_image("texture_cam")
            
 dpg.setup_dearpygui()
 dpg.set_primary_window("Primary Window",True)
 dpg.show_viewport()
+dpg.set_viewport_always_top(False)
 while dpg.is_dearpygui_running():
-    ret,frame=cam1.read()
-    data=np.flip(frame,2)
-    data=data.ravel()
-    data=np.asfarray(data,dtype='f')
-    texture_data_frame=np.true_divide(data,255.0)
-    dpg.set_value("texture_cam",texture_data_frame)
+    # ret,frame=cam1.read()
+    # data=np.flip(frame,2)
+    # data=data.ravel()
+    # data=np.asfarray(data,dtype='f')
+    # texture_data_frame=np.true_divide(data,255.0)
+    # dpg.set_value("texture_cam",texture_data_frame)
     dpg.render_dearpygui_frame()
-cam1.release()
+# cam1.release()
 dpg.destroy_context()
