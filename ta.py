@@ -9,7 +9,7 @@ import pickle
 
 frameSize = (640,480)
 
-chessboardSize=(5,5)
+chessboardSize=(12,11)
 images = glob.glob('assets/images/calib_example/*.tif')
 
 #chessboardSize = (10,7)
@@ -81,21 +81,21 @@ newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1
 # Undistort
 dst = cv.undistort(img, cameraMatrix, dist, None, newCameraMatrix)
 
-cv.imwrite('ignored/caliResult1.png', dst)
-# crop the image
-x, y, w, h = roi
-dst = dst[y:y+h, x:x+w]
 
+# crop the image
+# x, y, w, h = roi
+# dst = dst[y:y+h, x:x+w]
+cv.imwrite('ignored/caliResult1.png', dst)
 
 
 # Undistort with Remapping
 mapx, mapy = cv.initUndistortRectifyMap(cameraMatrix, dist, None, newCameraMatrix, (w,h), 5)
 dst = cv.remap(img, mapx, mapy, cv.INTER_LINEAR)
 
-cv.imwrite('ignored/caliResult2.png', dst)
 # crop the image
-x, y, w, h = roi
-dst = dst[y:y+h, x:x+w]
+# x, y, w, h = roi
+# dst = dst[y:y+h, x:x+w]
+cv.imwrite('ignored/caliResult2.png', dst)
 
 
 
