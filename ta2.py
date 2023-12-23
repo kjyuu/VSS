@@ -12,12 +12,14 @@ dpg.setup_dearpygui()
 
 # Definitions
 frameSize = (640,480)
-#chessboardSize=(12,13) # tif H x W
-#chessboardSize=(35,49)
-chessboardSize=(7,10)
-# images = glob.glob('assets\\images\\calib_example\\*.tif')
+chessboardSize=(12,13) # tif H x W
+#chessboardSize=(5,6)
+#chessboardSize=(7,10) own 03
+images = glob.glob('assets\\images\\calib_example\\*.tif')
+#images = glob.glob('assets\\images\\28x19-35mmx24mm(1.25)\\*.bmp')
+#images = glob.glob('assets\\images\\6x7-5mm\\*.bmp')
 #images = glob.glob('assets\\images\\o1z*.bmp')
-images = glob.glob('assets\\images\\o3z02*.jpg')
+#images = glob.glob('assets\\images\\o3z02*.jpg')
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
@@ -113,7 +115,7 @@ pickle.dump(dist, open( "ignored/dist.pkl", "wb" ))
 
 ############## UNDISTORTION #####################################################
 
-img = cv.imread('assets\\images\\calib_example\\Image4.tif')
+img = cv.imread(images[0])#cv.imread('assets\\images\\calib_example\\Image4.tif')
 cv.imwrite('ignored/caliResult0.png', img)
 h,  w = img.shape[:2]
 newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
