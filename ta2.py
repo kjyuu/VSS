@@ -12,14 +12,17 @@ dpg.setup_dearpygui()
 
 # Definitions
 frameSize = (640,480)
-chessboardSize=(12,13) # tif H x W
+#chessboardSize=(12,13) # tif H x W
 #chessboardSize=(5,6)
 #chessboardSize=(7,10) own 03
-images = glob.glob('assets\\images\\calib_example\\*.tif')
+chessboardSize=(5,6) # bmp H x W
+#images = glob.glob('assets\\images\\calib_example\\*.tif')
 #images = glob.glob('assets\\images\\28x19-35mmx24mm(1.25)\\*.bmp')
 #images = glob.glob('assets\\images\\6x7-5mm\\*.bmp')
 #images = glob.glob('assets\\images\\o1z*.bmp')
 #images = glob.glob('assets\\images\\o3z02*.jpg')
+images = glob.glob('assets\\images\\grzybek\\7x6 - 5mm\\p1z*.bmp')
+
 criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
@@ -67,21 +70,39 @@ def func():
        
     # print(objpoints)
     # print(imgpoints)
-texture_data=[]
-for i in range(0,frameSize[0]*frameSize[1]):
-    texture_data.append(255/255)
-    texture_data.append(200/255)
-    texture_data.append(100/255)
-    texture_data.append(255/255)
-raw_data=array.array('f',texture_data)
+def gen_texture(texture_width,texture_height,count_width,count_height):
+    texture_data=[]
+    sector_width_size=texture_width//count_width # decimal division, no remainder!
+    sector_height_size=texture_height//count_height # decimal division, no remainder!
+    base_intensity=255//(count_width+count_height)
+    for h in range(0,texture_height):
+        h_intensity=base_intensity*(h//sector_height_size)
+        for w in range(0,texture_width):
+            w_intensity=base_intensity*(w//sector_width_size)
+            pixel_intensity=w_intensity+h_intensity
+            # podzielić wysokość na ileSektorow sektorów, 255/ileSektorow~=25 każdy sektor zmiana wartości pixeli o 25 -> 25*sektor ,nr sektora = wysokość//sektorSize
+            
+            texture_data.append(pixel_intensity/255)
+            texture_data.append(pixel_intensity/255)
+            texture_data.append(pixel_intensity/255)
+            texture_data.append(255/255)
+    return array.array('f',texture_data)
+# texture_data=[]
+# for i in range(0,frameSize[0]*frameSize[1]):
+#     texture_data.append(255/255)
+#     texture_data.append(200/255)
+#     texture_data.append(100/255)
+#     texture_data.append(255/255)
+# raw_data=array.array('f',texture_data)
 
 #dpg.set_item_pos(tex_reg,pos=(400,400))
 #dpg.configure_item(tex_reg,pos=(400,400))
 with dpg.window(label="Image tutorial",tag="win") as win:
     with dpg.group() as tex_reg:
-        with dpg.texture_registry(tag="tex_reg"):
-            dpg.add_raw_texture(frameSize[0],frameSize[1],raw_data,format=dpg.mvFormat_Float_rgba,tag="raw_tex_1")
+        with dpg.texture_registry(show=True,tag="tex_reg"):
+            dpg.add_raw_texture(frameSize[0],frameSize[1],gen_texture(640,480,10,10),format=dpg.mvFormat_Float_rgba,tag="raw_tex_1")
             pass
+    dpg.add_image("raw_tex_1",parent=win)
     dpg.add_button(label="start script",callback=func)
     with dpg.font_registry():
         default_font=dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Medium.ttf",20)
@@ -95,7 +116,6 @@ with dpg.window(label="Image tutorial",tag="win") as win:
             dpg.add_menu_item(label="Show Style Editor", callback=lambda:dpg.show_tool(dpg.mvTool_Style))
             dpg.add_menu_item(label="Show Font Manager", callback=lambda:dpg.show_tool(dpg.mvTool_Font))
             dpg.add_menu_item(label="Show Item Registry", callback=lambda:dpg.show_tool(dpg.mvTool_ItemRegistry))
-
 dpg.set_primary_window("win",True)
 dpg.show_viewport()
 dpg.set_viewport_always_top(False)
