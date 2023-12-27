@@ -5,6 +5,7 @@ import pickle
 import dearpygui.dearpygui as dpg
 import array
 import time
+import math
 dpg.create_context()
 dpg.create_viewport(title='Custom Title', width=1300, height=900)
 dpg.set_viewport_always_top(True)
@@ -80,29 +81,45 @@ def gen_texture(texture_width,texture_height,count_width,count_height):
         for w in range(0,texture_width):
             w_intensity=base_intensity*(w//sector_width_size)
             pixel_intensity=w_intensity+h_intensity
-            # podzielić wysokość na ileSektorow sektorów, 255/ileSektorow~=25 każdy sektor zmiana wartości pixeli o 25 -> 25*sektor ,nr sektora = wysokość//sektorSize
-            
             texture_data.append(pixel_intensity/255)
             texture_data.append(pixel_intensity/255)
             texture_data.append(pixel_intensity/255)
             texture_data.append(255/255)
     return array.array('f',texture_data)
-# texture_data=[]
-# for i in range(0,frameSize[0]*frameSize[1]):
-#     texture_data.append(255/255)
-#     texture_data.append(200/255)
-#     texture_data.append(100/255)
-#     texture_data.append(255/255)
-# raw_data=array.array('f',texture_data)
+def distort_texture(texture,texture_width,texture_height,k1,k2,k3):
+    texture_data=[]
+    for h in range(0,texture_height):
+        for w in range(0,texture_width):
+            r=math.sqrt((w-texture_width/2)**2+(h-texture_height/2)**2)
+            radial_distortion=1+k1*r**2+k2*r**4+k3*r**6
+            w_undistorted=(w-texture_width/2)/radial_distortion
+            h_undistorted=(h-texture_height/2)/radial_distortion
+            pix_val=(h_undistorted+texture_height/2)*texture_width*4+(w_undistorted+texture_width/2)*4
+            pix_val_floor=math.floor(pix_val)
+            pix_val_mod=pix_val_floor%4
+            if pix_val_mod!=0:
+                pix_val_mod4=pix_val_floor-pix_val_mod
+            else:
+                pix_val_mod4=pix_val_floor
+            texture_data.append(texture[int(pix_val_mod4)])
+            texture_data.append(texture[int(pix_val_mod4)+1])
+            texture_data.append(texture[int(pix_val_mod4)+2])
+            texture_data.append(255/255)
+    return array.array('f',texture_data)
 
 #dpg.set_item_pos(tex_reg,pos=(400,400))
 #dpg.configure_item(tex_reg,pos=(400,400))
+width, height, channels, data = dpg.load_image("assets/images/o3z05.bmp")
 with dpg.window(label="Image tutorial",tag="win") as win:
     with dpg.group() as tex_reg:
         with dpg.texture_registry(show=True,tag="tex_reg"):
-            dpg.add_raw_texture(frameSize[0],frameSize[1],gen_texture(640,480,10,10),format=dpg.mvFormat_Float_rgba,tag="raw_tex_1")
+            dpg.add_dynamic_texture(width=width, height=height, default_value=data, tag="tex41")
+            dpg.add_raw_texture(frameSize[0],frameSize[1],gen_texture(frameSize[0],frameSize[1],10,7),format=dpg.mvFormat_Float_rgba,tag="raw_tex_1")
+            dpg.add_raw_texture(frameSize[0],frameSize[1],distort_texture(gen_texture(frameSize[0],frameSize[1],10,7),frameSize[0],frameSize[1],0.00000001,0,0),format=dpg.mvFormat_Float_rgba,tag="raw_tex_2")
             pass
-    dpg.add_image("raw_tex_1",parent=win)
+    dpg.add_image("tex41",parent=win)
+    #dpg.add_image("raw_tex_1",parent=win)
+    dpg.add_image("raw_tex_2",parent=win)
     dpg.add_button(label="start script",callback=func)
     with dpg.font_registry():
         default_font=dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Medium.ttf",20)
