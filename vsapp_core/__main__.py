@@ -17,9 +17,7 @@ def outputSelectedForDistortion(selected_files):
     for file in selected_files:
         dpg.add_text(file, parent=outputwindow)
         list_to_distort.append(file)
-print(os.getcwd())      
 fd = FileDialog(callback=outputSelectedForDistortion, show_dir_size=False, modal=False, allow_drag=False,no_resize=False,default_path='assets\\images')
-print(os.getcwd())
 app.addFontRegistry()
 
 dpg.configure_app(docking=True, docking_space=False)
@@ -27,14 +25,19 @@ dpg.configure_app(docking=True, docking_space=False)
 with dpg.window(tag="Primary Window"): # main window of the program
     app.addMenuBar()
     with dpg.table(tag="table",policy=dpg.mvTable_SizingStretchSame, header_row=False, borders_innerH=False,borders_outerH=False, borders_innerV=True, borders_outerV=False, resizable=True) as guiTableMain:
-                dpg.add_table_column(init_width_or_weight=0.4)
+                dpg.add_table_column(init_width_or_weight=0.45)
                 dpg.add_table_column()
                 with dpg.table_row():
                     with dpg.child_window(autosize_y=True) as mainColWind1: 
                         dpg.add_text("Image Distortion Module")
                         dpg.add_button(label="Select files", callback=fd.show_file_dialog)
                         dpg.add_child_window(width=-1, height=200, tag="txt_child",horizontal_scrollbar=True)
-                        dpg.add_button(label="Start", callback=lambda:app.startDistortion(list_to_distort))
+                        dpg.add_text("Image scaling settings")
+                        target_height=dpg.add_input_int(label="Target height", default_value=0,min_value=0,min_clamped=True)
+                        target_width=dpg.add_input_int(label="Target width", default_value=0,min_value=0,min_clamped=True)
+                        target_scale_x=dpg.add_input_float(label="Scale factor x", default_value=0,min_value=0,min_clamped=True)
+                        target_scale_y=dpg.add_input_float(label="Scale factor y", default_value=0,min_value=0,min_clamped=True)
+                        dpg.add_button(label="Start", callback=lambda:app.distortImages(list_to_distort,dpg.get_value(target_height),dpg.get_value(target_width),dpg.get_value(target_scale_x),dpg.get_value(target_scale_y)))
                     with dpg.child_window(autosize_y=True) as mainColWind2:
                         dpg.add_input_text(label="Text Input 1", source="string_value")
 dpg.setup_dearpygui()
