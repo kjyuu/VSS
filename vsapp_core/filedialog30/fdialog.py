@@ -51,11 +51,13 @@ class FileDialog:
         show_shortcuts_menu=True,
         no_resize=True,
         modal=True,
-        show_hidden_files=False
+        show_hidden_files=False,
+        runPath=os.getcwd()
     ):
         global chdir
         
         # args
+        self.runPath=runPath
         self.title = title
         self.tag = tag
         self.width = width
@@ -594,7 +596,7 @@ class FileDialog:
                                             _makefile(file, open_file)
                                     else:
                                         _makefile(file, open_file)
-
+                    os.chdir(runPath)
                 # exceptions
                 except FileNotFoundError:
                     print("DEV:ERROR: Invalid path : "+str(default_path))
