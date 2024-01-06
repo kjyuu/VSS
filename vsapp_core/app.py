@@ -1,6 +1,40 @@
 import os
 import numpy as np
 import cv2
+import dearpygui.dearpygui as dpg
+def addFontRegistry():
+    with dpg.font_registry():
+            dpg.add_font("assets/fonts/quicksand/Quicksand_Bold.otf",18)
+            dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Bold.ttf",18)
+            default_font=dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Medium.ttf",20)
+            dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Light.ttf",20)
+            dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMono-Italic.ttf",20)
+            dpg.add_font("assets/fonts/JetBrainsMono2.304/JetBrainsMonoNL-Medium.ttf",20)
+    dpg.bind_font(default_font)
+def addMenuBar():
+    with dpg.menu_bar(): # menu bar
+        with dpg.menu(label="Project"):
+            dpg.add_menu_item(label="New")
+            dpg.add_menu_item(label="Open..")
+            with dpg.menu(label="Open Recent"):
+                dpg.add_menu_item(label="to do")
+            dpg.add_menu_item(label="Save")
+            dpg.add_menu_item(label="Save as..")
+            dpg.add_menu_item(label="Project Settings")
+        with dpg.menu(label="Source"):
+            dpg.add_menu_item(label="Folder")
+            dpg.add_menu_item(label="USB Device")
+        with dpg.menu(label="Settings"):
+            dpg.add_menu_item(label="Toggle Fullscreen", callback=lambda:dpg.toggle_viewport_fullscreen())
+            dpg.add_menu_item(label="Language")
+        with dpg.menu(label="Tools"):
+            dpg.add_menu_item(label="Show About", callback=lambda:dpg.show_tool(dpg.mvTool_About))
+            dpg.add_menu_item(label="Show Metrics", callback=lambda:dpg.show_tool(dpg.mvTool_Metrics))
+            dpg.add_menu_item(label="Show Documentation", callback=lambda:dpg.show_tool(dpg.mvTool_Doc))
+            dpg.add_menu_item(label="Show Debug", callback=lambda:dpg.show_tool(dpg.mvTool_Debug))
+            dpg.add_menu_item(label="Show Style Editor", callback=lambda:dpg.show_tool(dpg.mvTool_Style))
+            dpg.add_menu_item(label="Show Font Manager", callback=lambda:dpg.show_tool(dpg.mvTool_Font))
+            dpg.add_menu_item(label="Show Item Registry", callback=lambda:dpg.show_tool(dpg.mvTool_ItemRegistry))
 def create_new_project():
     pass
 def open_project():
@@ -21,14 +55,14 @@ def open_project_view():
     pass
 def close_project_view():
     pass
-def startDistortion(selectedFiles):
-    print(np.size(selectedFiles))
-    for file in selectedFiles:
+def startDistortion(selectedFilesDistortion):
+    print("started startDistortion:",np.size(selectedFilesDistortion))
+    for file in selectedFilesDistortion:
         #check if file is image type
         if os.path.splitext(file)[1] in ['.jpg', '.png', '.jpeg', '.bmp','.tif']:
             print(file, "is an image file")
             true_dst=cv2.imread(file)
-            src = cv2.imread("img2.png")
+            src = true_dst
 
             # ground truth homography from true_dst to src
             H = np.array([

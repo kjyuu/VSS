@@ -310,6 +310,8 @@ class FileDialog:
                 pass
             else:
                 self.callback(self.selected_files)
+                # global selectedFilesDistortion
+                # selectedFilesDistortion=self.selected_files
             self.selected_files.clear()
             reset_dir(default_path=self.default_path)
 
