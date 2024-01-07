@@ -12,7 +12,7 @@ list_to_distort=[]
 def checkbox_changed(sender,app_data,user_data):
     if sender==checkbox_scale:
         dpg.configure_item(group_scaling,show=app_data)
-    elif sender==ckeckbox_distort:
+    elif sender==checkbox_distort:
         dpg.configure_item(group_distortion,show=app_data)
 def outputSelectedForDistortion(selected_files):
     outputwindow="txt_child"
@@ -39,8 +39,10 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                         dpg.add_child_window(width=-1, height=200, tag="txt_child",horizontal_scrollbar=True)
                         with dpg.group(horizontal=True):
                             checkbox_scale=dpg.add_checkbox(label="Scale",callback=checkbox_changed)
-                            ckeckbox_distort=dpg.add_checkbox(label="Distort",callback=checkbox_changed)
-                            dpg.add_button(label="Start", callback=lambda:app.distortImages(list_to_distort,dpg.get_value(target_height),dpg.get_value(target_width),dpg.get_value(target_scale_x),dpg.get_value(target_scale_y)))
+                            checkbox_distort=dpg.add_checkbox(label="Distort",callback=checkbox_changed)
+                            dpg.add_button(label="Start", callback=lambda:app.ResizeAndDistort(list_to_distort,
+                                enable_scaling=dpg.get_value(checkbox_scale),target_height=dpg.get_value(target_height),target_width=dpg.get_value(target_width),scale_factor_x=dpg.get_value(target_scale_x),scale_factor_y=dpg.get_value(target_scale_y),
+                                enable_distortion=dpg.get_value(checkbox_distort),dstBC_k1=dpg.get_value(dst_k1),dstBC_k2=dpg.get_value(dst_k2),dstBC_k3=dpg.get_value(dst_k3),dstBC_p1=dpg.get_value(dst_p1),dstBC_p2=dpg.get_value(dst_p2)))
                         with dpg.group(show=False) as group_scaling: 
                             dpg.add_text("Image scaling settings")
                             target_height=dpg.add_input_int(label="Target height", default_value=0,min_value=0,min_clamped=True)
@@ -48,12 +50,22 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             target_scale_x=dpg.add_input_float(label="Scale factor x", default_value=0,min_value=0,min_clamped=True)
                             target_scale_y=dpg.add_input_float(label="Scale factor y", default_value=0,min_value=0,min_clamped=True)
                         with dpg.group(show=False) as group_distortion:
+                            dpg.add_text("Distortion settings [Brown-Conrady]")
+                            dst_k1=dpg.add_input_double(label="k1",default_value=0,step=0.0000001,step_fast=0.000001,format='%.8f')
+                            dst_k2=dpg.add_input_double(label="k2",default_value=0,step=0.00000000001,step_fast=0.0000000001,format='%.12f')
+                            dst_k3=dpg.add_input_double(label="k3",default_value=0,step=0.000000000000001,step_fast=0.00000000000001,format='%.16f')
+                            dst_p1=dpg.add_input_double(label="p1",default_value=0,step=0.00001,step_fast=0.0001,format='%.6f')
+                            dst_p2=dpg.add_input_double(label="p2",default_value=0,step=0.00001,step_fast=0.0001,format='%.6f')
                             pass 
                         with dpg.group() as group_results:
                             pass
                         #imageplot do wyświetlania, image button jako miniatury?
                     with dpg.child_window(autosize_y=True) as mainColWind2:
                         dpg.add_input_text(label="Text Input 1", source="string_value")
+                    # print("break")
+                    # app.ResizeAndDistort("assets/images/o3z05.bmp",
+                    #             enable_scaling=dpg.get_value(checkbox_scale),target_height=dpg.get_value(target_height),target_width=dpg.get_value(target_width),scale_factor_x=dpg.get_value(target_scale_x),scale_factor_y=dpg.get_value(target_scale_y),
+                    #             enable_distortion=True,dstBC_k1=dpg.get_value(dst_k1),dstBC_k2=dpg.get_value(dst_k2),dstBC_k3=dpg.get_value(dst_k3),dstBC_p1=dpg.get_value(dst_p1),dstBC_p2=dpg.get_value(dst_p2))
 dpg.setup_dearpygui()
 dpg.set_primary_window("Primary Window",True)
 dpg.show_viewport()

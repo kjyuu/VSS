@@ -43,36 +43,43 @@ def resizeImage(inputImage,target_width=0,target_height=0,scale_factor_x=0,scale
     else:
         resized = cv2.resize(inputImage,None, fx=fx, fy=fy, interpolation = cv2.INTER_AREA)
     return resized
-def distortImages(selectedFilesDistortion,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
-    for file in selectedFilesDistortion:
+def ResizeAndDistort(selected_files,enable_scaling=False,enable_distortion=False,Cx=-1,Cy=-1,dstBC_k1=0,dstBC_k2=0,dstBC_k3=0,dstBC_p1=0,dstBC_p2=0,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
+    for file in selected_files:
         #check if file is of image type
         if os.path.splitext(file)[1] in ['.jpg', '.png', '.jpeg', '.bmp','.tif']:
             image = cv2.imread(file)
             print(os.path.basename(file), "is an image file with size", image.shape[1], "x", image.shape[0], "pixels")
-            
-            resized=resizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
-            print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
-            (h, w, c) = resized.shape
-            center = (w // 2, h // 2)
-
-            # set up the x and y maps as float32
-            map_x = np.zeros((h,w),np.float32)
-            map_y = np.zeros((h,w),np.float32)
-
-            for y in range(h):
-                for x in range(w):
-                    map_x[y,x] = x + math.cos(x/30) * 15
-                    map_y[y,x] = y + math.cos(y/50) * 25
-
-
-            # do the remap  this is where the magic happens      
-            dst = cv2.remap(resized,map_x,map_y,cv2.INTER_CUBIC)
-
-
-            #show the results and wait for a key
             cv2.imshow("Original",image)
-            cv2.imshow("Resized",resized)
-            cv2.imshow("Distorted",dst)
+            print("scaling status:",enable_scaling)
+            if enable_scaling:
+                resized=resizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
+                cv2.imshow("Resized",resized)
+                (h, w, c) = resized.shape
+            else:
+                (h, w, c) = image.shape
+            print("distortion status:",enable_distortion)
+            if enable_distortion:
+                if(Cx==-1 or Cy==-1):
+                    Cx,Cy = (w // 2, h // 2)
+                # set up the x and y maps as float32
+                map_x = np.zeros((h,w),np.float32)
+                map_y = np.zeros((h,w),np.float32)
+                for y in range(h):
+                    for x in range(w):
+                        #create radial distortion maps
+                        r2=((x - Cx) ** 2 + (y - Cy) ** 2)
+                        x_rel=x-Cx #x=0, Cx=240,x_rel=-240 map_x[0,0]=240-240=0
+                        y_rel=y-Cy
+                        map_x[y, x] = Cx + x_rel * (1+(dstBC_k1*r2)+(dstBC_k2*r2**2)+(dstBC_k3*r2**3))+(2*dstBC_p1*x_rel*y_rel)+(dstBC_p2*(r2+2*x_rel*x_rel))
+                        map_y[y, x] = Cy + y_rel * (1+(dstBC_k1*r2)+(dstBC_k2*r2**2)+(dstBC_k3*r2**3))+(dstBC_p1*(r2+2*y_rel*y_rel))+(2*dstBC_p2*x_rel*y_rel)
+                if enable_scaling:
+                    dst = cv2.remap(resized,map_x,map_y,cv2.INTER_CUBIC)
+                else:
+                    dst = cv2.remap(image,map_x,map_y,cv2.INTER_CUBIC)
+                # do the remap  this is where the magic happens      
+                #show the results and wait for a key
+                cv2.imshow("Distorted",dst)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 def addFontRegistry():
