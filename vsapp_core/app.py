@@ -3,10 +3,11 @@ import numpy as np
 import cv2
 import dearpygui.dearpygui as dpg
 import math
+
 def resizeImage(inputImage,target_width=0,target_height=0,scale_factor_x=0,scale_factor_y=0):
     # resize image
     # if selected width or height, calculate target for resized image
-    epsilon = 1e-10
+    epsilon = 1e-10 # constant for checking if float is 0
     target_size=0
     fx=1.0
     fy=1.0
