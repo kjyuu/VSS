@@ -357,17 +357,22 @@ class FileDialog:
             try:
                 directory_path = os.path.join(os.path.expanduser("~"), directory_name)
                 os.listdir(directory_path)
+                print("1")
             except FileNotFoundError:
+                print("2")
                 try:
                     directory_path = os.path.join("D:/", directory_name)
                     os.listdir(directory_path)
+                    print("3")
                 except FileNotFoundError:
-                    directory_path = glob(os.path.expanduser("~\\*\\" + directory_name))[0]
+                    print("4")
                     try:
-                        os.listdir(directory_path)
-                    except FileNotFoundError:
-                        message_box("File dialog - Error", "Could not find the selected directory")
+                        print("4.1")
+                        directory_path = glob(os.path.expanduser("~\\" + directory_name))[0]
+                    except IndexError:
+                        print("File dialog - Error", "Could not find the selected directory")
                         return "."
+            print("5")
             return directory_path
         
         import os
@@ -615,12 +620,20 @@ class FileDialog:
             with dpg.group(horizontal=True):
                 # shortcut menu
                 with dpg.child_window(tag="shortcut_menu", width=200, show=self.show_shortcuts_menu, height=-info_px):
-                    desktop = get_directory_path("Pulpit")
-                    downloads = get_directory_path("Pobrane")
-                    images = get_directory_path("Obrazy")
-                    documents = get_directory_path("Dokumenty")
-                    musics = get_directory_path("Muzyka")
-                    videos = get_directory_path("Wideo")
+                    desktop = get_directory_path("Desktop")
+                    if desktop==self.default_path:
+                        desktop=get_directory_path("Pulpit")
+                        downloads = get_directory_path("Pobrane")
+                        images = get_directory_path("Obrazy")
+                        documents = get_directory_path("Dokumenty")
+                        musics = get_directory_path("Muzyka")
+                        videos = get_directory_path("Wideo")
+                    else:
+                        downloads = get_directory_path("Downloads")
+                        images = get_directory_path("Pictures")
+                        documents = get_directory_path("Documents")
+                        musics = get_directory_path("Music")
+                        videos = get_directory_path("Videos")
 
                     with dpg.group(horizontal=True):
                         dpg.add_image(self.img_desktop)
