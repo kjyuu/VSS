@@ -63,7 +63,7 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             dst_k3=dpg.add_input_double(label="k3",default_value=0,step=0.000000000000001,step_fast=0.00000000000001,format='%.16f')
                             dst_p1=dpg.add_input_double(label="p1",default_value=0,step=0.00001,step_fast=0.0001,format='%.6f')
                             dst_p2=dpg.add_input_double(label="p2",default_value=0,step=0.00001,step_fast=0.0001,format='%.6f')
-                            pass 
+                            pass
                         with dpg.group(show=False) as group_calibration: 
                             dpg.add_text("Camera Calibration settings")
                             chessboard_squares_h=dpg.add_input_int(label="Number of vertical fields", default_value=6,min_value=0,min_clamped=True)

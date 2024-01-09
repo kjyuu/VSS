@@ -115,6 +115,7 @@ def ResizeAndDistort(selected_files,enable_scaling=False,enable_distortion=False
             image = cv2.imread(file)
             print(os.path.basename(file), "is an image file with size", image.shape[1], "x", image.shape[0], "pixels")
             cv2.imshow("Original",image)
+            cv2.imwrite('ignored/original.png', image)
             print("scaling status:",enable_scaling)
             if enable_scaling:
                 resized=ResizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
@@ -145,6 +146,7 @@ def ResizeAndDistort(selected_files,enable_scaling=False,enable_distortion=False
                 # do the remap  this is where the magic happens      
                 #show the results and wait for a key
                 cv2.imshow("Distorted",dst)
+                cv2.imwrite('ignored/distort1.png', dst)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 def addFontRegistry():
