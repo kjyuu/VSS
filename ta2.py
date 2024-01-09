@@ -24,7 +24,7 @@ chessboardSize=(5,6) # bmp H x W
 #images = glob.glob('assets\\images\\o3z02*.jpg')
 images = glob.glob('assets\\images\\grzybek\\7x6 - 5mm\\p1z*.bmp')
 
-criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+criteria = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 30, 0.001) # termination criteria for subpixel corner detection, max 30 iterations or epsilon 0.001
 # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
 objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32)
 objp[:,:2] = np.mgrid[0:chessboardSize[0],0:chessboardSize[1]].T.reshape(-1,2)

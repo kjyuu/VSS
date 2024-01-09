@@ -3,8 +3,73 @@ import numpy as np
 import cv2
 import dearpygui.dearpygui as dpg
 import math
-
-def resizeImage(inputImage,target_width=0,target_height=0,scale_factor_x=0,scale_factor_y=0):
+def conv_img2raw(img,width,height):
+    resized_img=cv2.resize(img, (width, height), interpolation=cv2.INTER_NEAREST)
+    raw=np.flip(resized_img[:],2)
+    raw=raw.ravel()
+    raw=np.asfarray(raw,dtype='f')
+    raw=np.true_divide(raw,255.0)
+    return raw
+def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, results_parent,calib_tex_reg,calib_enable=False,enable_scaling=False,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
+    if calib_enable==True:
+        # implement cv2 calibration on list of images and return camera matrix and distortion coefficients
+        dpg.delete_item(results_parent, children_only=True)
+        dpg.delete_item(calib_tex_reg, children_only=True)
+        objpoints = []  # 3D points in real world space
+        imgpoints = []  # 2D points in image plane
+        list_of_images = []
+        for filepath in list_of_filepaths:
+            if os.path.splitext(filepath)[1] in ['.jpg', '.png', '.jpeg', '.bmp','.tif']:
+                image = cv2.imread(filepath)
+                print(os.path.basename(filepath), "is an image file with", image.shape[1], "x", image.shape[0], "pixels")
+                list_of_images.append(image)
+                #cv2.imshow("Original",image)
+        # Prepare object points, like (0,0,0), (1,0,0), (2,0,0), ..., (6,5,0)
+        objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32) 
+        objp[:, :2] = np.mgrid[0:chessboardSize[0], 0:chessboardSize[1]].T.reshape(-1, 2) # x,y coordinates, T.reshape(-1,2) flattens the array
+        objp *= size_of_chessboard_squares_mm # scale by size of squares
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001) # termination criteria for subpixel corner detection, max 30 iterations or epsilon 0.001
+        for image in list_of_images: # loop through images
+            frameSize = (image.shape[1], image.shape[0]) # get frame size
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # convert to grayscale
+            hgroup=dpg.add_group(horizontal=True,parent=results_parent)
+            # Find the chessboard corners
+            ret, corners = cv2.findChessboardCorners(gray, chessboardSize, None)
+            # flags flags=cv2.CALIB_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE +cv2.CALIB_CB_FILTER_QUADS +cv2.CALIB_CB_CLUSTERING
+            # If found, add object points and image points
+            if enable_scaling:
+                resized=ResizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
+                t=dpg.add_raw_texture(width=resized.shape[1], height=resized.shape[0], default_value=conv_img2raw(resized,resized.shape[1],resized.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
+            else:
+                t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
+            
+            dpg.add_image(t,parent=hgroup)
+            if ret:
+                objpoints.append(objp) # append object points
+                #imgpoints.append(corners) # append image points without refining them
+                corners2 = cv2.cornerSubPix(gray,corners, (5,5), (-1,-1), criteria)
+                imgpoints.append(corners2)
+                img_with_corners = cv2.drawChessboardCorners(image, chessboardSize, corners2, ret) # draw corners on image
+                if enable_scaling:
+                    resized=ResizeImage(img_with_corners,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                    print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
+                    t=dpg.add_raw_texture(width=resized.shape[1], height=resized.shape[0], default_value=conv_img2raw(resized,resized.shape[1],resized.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
+                else:
+                    t=dpg.add_raw_texture(width=img_with_corners.shape[1], height=img_with_corners.shape[0], default_value=conv_img2raw(img_with_corners,img_with_corners.shape[1],img_with_corners.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
+                dpg.add_image(t,parent=hgroup)
+            else:
+                print("No Checkerboard Found")
+        # Calibrate camera
+        if len(objpoints) == 0:
+            print("No checkerboard found in images")
+            return None, None
+        else: 
+            ret, cameraMatrix, distCoeffs, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, frameSize, None, None) # returns camera matrix, distortion coefficients, rotation and translation vectors
+        return cameraMatrix, distCoeffs
+    else:
+        return None, None
+def ResizeImage(inputImage,target_width=0,target_height=0,scale_factor_x=0,scale_factor_y=0):
     # resize image
     # if selected width or height, calculate target for resized image
     epsilon = 1e-10 # constant for checking if float is 0
@@ -52,7 +117,7 @@ def ResizeAndDistort(selected_files,enable_scaling=False,enable_distortion=False
             cv2.imshow("Original",image)
             print("scaling status:",enable_scaling)
             if enable_scaling:
-                resized=resizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                resized=ResizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
                 print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
                 cv2.imshow("Resized",resized)
                 (h, w, c) = resized.shape
