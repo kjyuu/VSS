@@ -66,8 +66,8 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             pass
                         with dpg.group(show=False) as group_calibration: 
                             dpg.add_text("Camera Calibration settings")
-                            chessboard_squares_h=dpg.add_input_int(label="Number of vertical fields", default_value=6,min_value=0,min_clamped=True)
-                            chessboard_squares_w=dpg.add_input_int(label="Number of horizontal fields", default_value=7,min_value=0,min_clamped=True)
+                            chessboard_squares_h=dpg.add_input_int(label="Number of rows", default_value=6,min_value=0,min_clamped=True)
+                            chessboard_squares_w=dpg.add_input_int(label="Number of columns", default_value=7,min_value=0,min_clamped=True)
                             size_of_chessboard_squares=dpg.add_input_float(label="Size of chessboard squares [mm]", default_value=5,min_value=0,min_clamped=True)
                         #imageplot do wyświetlania, image button jako miniatury?
                     with dpg.child_window(horizontal_scrollbar=True) as mainColWind2:

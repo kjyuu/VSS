@@ -25,7 +25,7 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                 list_of_images.append(image)
                 #cv2.imshow("Original",image)
         # Prepare object points, like (0,0,0), (1,0,0), (2,0,0), ..., (6,5,0)
-        objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32) 
+        objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32) # chessboardSize[0] is height, chessboardSize[1] is width
         objp[:, :2] = np.mgrid[0:chessboardSize[0], 0:chessboardSize[1]].T.reshape(-1, 2) # x,y coordinates, T.reshape(-1,2) flattens the array
         objp *= size_of_chessboard_squares_mm # scale by size of squares
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001) # termination criteria for subpixel corner detection, max 30 iterations or epsilon 0.001
@@ -50,7 +50,14 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                 #imgpoints.append(corners) # append image points without refining them
                 corners2 = cv2.cornerSubPix(gray,corners, (5,5), (-1,-1), criteria)
                 imgpoints.append(corners2)
+                print("objectpoint size:", np.size(objpoints), "imagepoint size:", np.size(imgpoints))
+                print("last objectpoint size:", np.size(objpoints[-1]), "last imagepoint size:", np.size(imgpoints[-1]))
+                print("objectpoint shape:", np.shape(objpoints), "imagepoint shape:", np.shape(imgpoints))
+                print("last objectpoint shape:", np.shape(objpoints[-1]), "last imagepoint shape:", np.shape(imgpoints[-1]))
+                print("last objectpoint's first three elements:", objpoints[-1][0:3], "last imagepoint's first three elements:", imgpoints[-1][0:3])
+                print(imgpoints[-1][0][0][0], imgpoints[-1][0][0][1])
                 img_with_corners = cv2.drawChessboardCorners(image, chessboardSize, corners2, ret) # draw corners on image
+                img_with_corners=cv2.circle(img_with_corners,(int(round(imgpoints[-1][0][0][0])),int(round(imgpoints[-1][0][0][1]))),50,(0,0,255),-1)
                 if enable_scaling:
                     resized=ResizeImage(img_with_corners,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
                     print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
@@ -65,7 +72,17 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
             print("No checkerboard found in images")
             return None, None
         else: 
-            ret, cameraMatrix, distCoeffs, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, frameSize, None, None) # returns camera matrix, distortion coefficients, rotation and translation vectors
+            ret, cameraMatrix, distCoeffs, rvecs, tvecs, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors = cv2.calibrateCameraExtended(objpoints, imgpoints, frameSize, None, None) # returns camera matrix, distortion coefficients, rotation and translation vectors
+            print("ret:", ret, "camera matrix:\n", cameraMatrix)#, "\ndistortion coefficients: ", distCoeffs, "\nrotation vectors: ", rvecs, "\ntranslation vectors: ", tvecs, "\nstdDeviationsIntrinsics: ", stdDeviationsIntrinsics, "\nstdDeviationsExtrinsics: ", stdDeviationsExtrinsics, "\nperViewErrors: ", perViewErrors)
+            fovx, fovy, focalLength, principalPoint, aspectRatio=cv2.calibrationMatrixValues(cameraMatrix, frameSize, 4.8, 3.6	)
+            print("fovx:", fovx, "fovy:", fovy, "focalLength:", focalLength, "principalPoint:", principalPoint, "aspectRatio:", aspectRatio)
+            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 1) #test bool setting 
+            
+            map_undist_1,map_undist_2=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix, frameSize, cv2.CV_32FC1)
+            undist = cv2.remap(image,map_undist_1,map_undist_2,cv2.INTER_CUBIC)
+            undist=cv2.rectangle(undist,roi,(255,0,0),2)
+            t=dpg.add_raw_texture(width=undist.shape[1], height=undist.shape[0], default_value=conv_img2raw(undist,undist.shape[1],undist.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
+            dpg.add_image(t,parent=hgroup)
         return cameraMatrix, distCoeffs
     else:
         return None, None

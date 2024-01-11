@@ -365,7 +365,7 @@ class FileDialog:
                     try:
                         directory_path = glob(os.path.expanduser("~\\" + directory_name))[0]
                     except IndexError:
-                        print("File dialog - Error", "Could not find the selected directory")
+                        #print("File dialog - Error", "Could not find the selected directory")
                         return self.default_path
             return directory_path
         
