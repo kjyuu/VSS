@@ -10,11 +10,48 @@ def conv_img2raw(img,width,height):
     raw=np.asfarray(raw,dtype='f')
     raw=np.true_divide(raw,255.0)
     return raw
+def DrawImagesInParent(list_of_images,results_parent,results_tex_reg):
+    dpg.delete_item(results_parent, children_only=True)
+    dpg.delete_item(results_tex_reg, children_only=True)
+    group_results_horizontal=[]
+    group_results_vertical=[]
+    #sort list of images by id
+    print("unsorted:\n", [(t[0], t[2]) for t in list_of_images])
+    list_of_images.sort(key=lambda x: x[0])
+    print("sorted:\n", [(t[0], t[2]) for t in list_of_images])
+    for i in range(len(list_of_images)):
+        id,image,type=list_of_images[i]
+        if type=="original": # original will always be new image, add groups here
+            group_results_horizontal=dpg.add_group(horizontal=True,parent=results_parent)
+            group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
+            dpg.add_text("Original",parent=group_results_vertical)
+            t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
+            dpg.add_image(t,parent=group_results_vertical)
+        elif type=="scaled":
+            group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
+            dpg.add_text("Scaled",parent=group_results_vertical)
+            t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
+            dpg.add_image(t,parent=group_results_vertical)
+        elif type=="distorted":
+            group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
+            dpg.add_text("Distorted",parent=group_results_vertical)
+            t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
+            dpg.add_image(t,parent=group_results_vertical)
+        elif type=="chessboard":
+            group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
+            dpg.add_text("Found chessboard corners",parent=group_results_vertical)
+            t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
+            dpg.add_image(t,parent=group_results_vertical)
+        elif type=="undistorted":
+            print("drawing undistorted image")
+            group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
+            dpg.add_text("Undistorted",parent=group_results_vertical)
+            t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
+            dpg.add_image(t,parent=group_results_vertical)
+    return None
 def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, results_parent,calib_tex_reg,calib_enable=False,enable_scaling=False,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
     if calib_enable==True:
         # implement cv2 calibration on list of images and return camera matrix and distortion coefficients
-        dpg.delete_item(results_parent, children_only=True)
-        dpg.delete_item(calib_tex_reg, children_only=True)
         objpoints = []  # 3D points in real world space
         imgpoints = []  # 2D points in image plane
         list_of_images = []
@@ -23,48 +60,42 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                 image = cv2.imread(filepath)
                 print(os.path.basename(filepath), "is an image file with", image.shape[1], "x", image.shape[0], "pixels")
                 list_of_images.append(image)
-                #cv2.imshow("Original",image)
-        # Prepare object points, like (0,0,0), (1,0,0), (2,0,0), ..., (6,5,0)
         objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32) # chessboardSize[0] is height, chessboardSize[1] is width
         objp[:, :2] = np.mgrid[0:chessboardSize[0], 0:chessboardSize[1]].T.reshape(-1, 2) # x,y coordinates, T.reshape(-1,2) flattens the array
         objp *= size_of_chessboard_squares_mm # scale by size of squares
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001) # termination criteria for subpixel corner detection, max 30 iterations or epsilon 0.001
+        list_of_images_to_draw=[]
+        
+        id=0
         for image in list_of_images: # loop through images
+            id+=1
             frameSize = (image.shape[1], image.shape[0]) # get frame size
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # convert to grayscale
-            hgroup=dpg.add_group(horizontal=True,parent=results_parent)
+            if enable_scaling:
+                resized=ResizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                list_of_images_to_draw.append((id,resized,'original'))#resized counted as original only for scaling purposes for now
+            else:
+                list_of_images_to_draw.append((id,image,'original'))
+                
             # Find the chessboard corners
             ret, corners = cv2.findChessboardCorners(gray, chessboardSize, None)
             # flags flags=cv2.CALIB_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE +cv2.CALIB_CB_FILTER_QUADS +cv2.CALIB_CB_CLUSTERING
             # If found, add object points and image points
-            if enable_scaling:
-                resized=ResizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
-                print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
-                t=dpg.add_raw_texture(width=resized.shape[1], height=resized.shape[0], default_value=conv_img2raw(resized,resized.shape[1],resized.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
-            else:
-                t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
-            
-            dpg.add_image(t,parent=hgroup)
             if ret:
                 objpoints.append(objp) # append object points
                 #imgpoints.append(corners) # append image points without refining them
                 corners2 = cv2.cornerSubPix(gray,corners, (5,5), (-1,-1), criteria)
                 imgpoints.append(corners2)
-                print("objectpoint size:", np.size(objpoints), "imagepoint size:", np.size(imgpoints))
-                print("last objectpoint size:", np.size(objpoints[-1]), "last imagepoint size:", np.size(imgpoints[-1]))
-                print("objectpoint shape:", np.shape(objpoints), "imagepoint shape:", np.shape(imgpoints))
-                print("last objectpoint shape:", np.shape(objpoints[-1]), "last imagepoint shape:", np.shape(imgpoints[-1]))
-                print("last objectpoint's first three elements:", objpoints[-1][0:3], "last imagepoint's first three elements:", imgpoints[-1][0:3])
-                print(imgpoints[-1][0][0][0], imgpoints[-1][0][0][1])
                 img_with_corners = cv2.drawChessboardCorners(image, chessboardSize, corners2, ret) # draw corners on image
-                img_with_corners=cv2.circle(img_with_corners,(int(round(imgpoints[-1][0][0][0])),int(round(imgpoints[-1][0][0][1]))),50,(0,0,255),-1)
+                #img_with_corners=cv2.circle(img_with_corners,(int(round(imgpoints[-1][0][0][0])),int(round(imgpoints[-1][0][0][1]))),50,(0,0,255),-1)
+                #img_with_corners=cv2.line(img_with_corners,(int(round(imgpoints[-1][-1][0][0])),int(round(imgpoints[-1][-1][0][1]))),(int(round(imgpoints[-1][0][0][0])),int(round(imgpoints[-1][0][0][1]))),(0,255,0),5)
+                #img_with_corners=cv2.putText(img_with_corners,"Hi",(int(round(imgpoints[-1][-1][0][0]))-50,int(round(imgpoints[-1][-1][0][1]))+50),cv2.FONT_HERSHEY_SIMPLEX,1,(0,0,0),2,cv2.LINE_AA)
+                
                 if enable_scaling:
                     resized=ResizeImage(img_with_corners,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
-                    print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
-                    t=dpg.add_raw_texture(width=resized.shape[1], height=resized.shape[0], default_value=conv_img2raw(resized,resized.shape[1],resized.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
+                    list_of_images_to_draw.append((id,resized,'chessboard'))
                 else:
-                    t=dpg.add_raw_texture(width=img_with_corners.shape[1], height=img_with_corners.shape[0], default_value=conv_img2raw(img_with_corners,img_with_corners.shape[1],img_with_corners.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
-                dpg.add_image(t,parent=hgroup)
+                    list_of_images_to_draw.append((id,img_with_corners,'chessboard'))
             else:
                 print("No Checkerboard Found")
         # Calibrate camera
@@ -73,16 +104,24 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
             return None, None
         else: 
             ret, cameraMatrix, distCoeffs, rvecs, tvecs, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors = cv2.calibrateCameraExtended(objpoints, imgpoints, frameSize, None, None) # returns camera matrix, distortion coefficients, rotation and translation vectors
-            print("ret:", ret, "camera matrix:\n", cameraMatrix)#, "\ndistortion coefficients: ", distCoeffs, "\nrotation vectors: ", rvecs, "\ntranslation vectors: ", tvecs, "\nstdDeviationsIntrinsics: ", stdDeviationsIntrinsics, "\nstdDeviationsExtrinsics: ", stdDeviationsExtrinsics, "\nperViewErrors: ", perViewErrors)
+            #print("ret:", ret, "camera matrix:\n", cameraMatrix)#, "\ndistortion coefficients: ", distCoeffs, "\nrotation vectors: ", rvecs, "\ntranslation vectors: ", tvecs, "\nstdDeviationsIntrinsics: ", stdDeviationsIntrinsics, "\nstdDeviationsExtrinsics: ", stdDeviationsExtrinsics, "\nperViewErrors: ", perViewErrors)
             fovx, fovy, focalLength, principalPoint, aspectRatio=cv2.calibrationMatrixValues(cameraMatrix, frameSize, 4.8, 3.6	)
             print("fovx:", fovx, "fovy:", fovy, "focalLength:", focalLength, "principalPoint:", principalPoint, "aspectRatio:", aspectRatio)
             newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 1) #test bool setting 
             
             map_undist_1,map_undist_2=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix, frameSize, cv2.CV_32FC1)
-            undist = cv2.remap(image,map_undist_1,map_undist_2,cv2.INTER_CUBIC)
-            undist=cv2.rectangle(undist,roi,(255,0,0),2)
-            t=dpg.add_raw_texture(width=undist.shape[1], height=undist.shape[0], default_value=conv_img2raw(undist,undist.shape[1],undist.shape[0]),format=dpg.mvFormat_Float_rgb,parent=calib_tex_reg)
-            dpg.add_image(t,parent=hgroup)
+            id=0
+            for image in list_of_images:
+                id+=1
+                undist = cv2.remap(image,map_undist_1,map_undist_2,cv2.INTER_CUBIC)
+                undist=cv2.rectangle(undist,roi,(255,0,0),2)
+                if enable_scaling:
+                    resized=ResizeImage(undist,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                    list_of_images_to_draw.append((id,resized,'undistorted'))
+                else:
+                    list_of_images_to_draw.append((id,undist,'undistorted'))
+        DrawImagesInParent(list_of_images_to_draw,results_parent,calib_tex_reg)
+            
         return cameraMatrix, distCoeffs
     else:
         return None, None
@@ -125,22 +164,23 @@ def ResizeImage(inputImage,target_width=0,target_height=0,scale_factor_x=0,scale
     else:
         resized = cv2.resize(inputImage,None, fx=fx, fy=fy, interpolation = cv2.INTER_AREA)
     return resized
-def ResizeAndDistort(selected_files,enable_scaling=False,enable_distortion=False,Cx=-1,Cy=-1,dstBC_k1=0,dstBC_k2=0,dstBC_k3=0,dstBC_p1=0,dstBC_p2=0,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
+def ResizeAndDistort(selected_files,draw_parent,draw_tex_reg,enable_original=False,enable_scaling=False,enable_distortion=False,Cx=-1,Cy=-1,dstBC_k1=0,dstBC_k2=0,dstBC_k3=0,dstBC_p1=0,dstBC_p2=0,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
+    list_of_images_to_draw=[]
+    id=0
     for file in selected_files:
         #check if file is of image type
         if os.path.splitext(file)[1] in ['.jpg', '.png', '.jpeg', '.bmp','.tif']:
             image = cv2.imread(file)
-            print(os.path.basename(file), "is an image file with size", image.shape[1], "x", image.shape[0], "pixels")
-            cv2.imshow("Original",image)
-            cv2.imwrite('ignored/original.png', image)
+            id+=1
             print("scaling status:",enable_scaling)
             if enable_scaling:
                 resized=ResizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
-                print("Resized image to", resized.shape[1], "x", resized.shape[0], "pixels")
-                cv2.imshow("Resized",resized)
                 (h, w, c) = resized.shape
-            else:
-                (h, w, c) = image.shape
+                if enable_original:
+                    list_of_images_to_draw.append((id,image,'original'))
+                else:
+                    list_of_images_to_draw.append((id,resized,'original'))
+                    (h, w, c) = image.shape
             print("distortion status:",enable_distortion)
             if enable_distortion:
                 if(Cx==-1 or Cy==-1):
@@ -160,12 +200,8 @@ def ResizeAndDistort(selected_files,enable_scaling=False,enable_distortion=False
                     dst = cv2.remap(resized,map_x,map_y,cv2.INTER_CUBIC)
                 else:
                     dst = cv2.remap(image,map_x,map_y,cv2.INTER_CUBIC)
-                # do the remap  this is where the magic happens      
-                #show the results and wait for a key
-                cv2.imshow("Distorted",dst)
-                cv2.imwrite('ignored/distort1.png', dst)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+                list_of_images_to_draw.append((id,dst,'distorted'))
+    DrawImagesInParent(list_of_images_to_draw,draw_parent,draw_tex_reg)
 def addFontRegistry():
     with dpg.font_registry():
             dpg.add_font("assets/fonts/quicksand/Quicksand_Bold.otf",18)

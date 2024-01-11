@@ -41,9 +41,10 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                         dpg.add_button(label="Select files", callback=fd.show_file_dialog)
                         dpg.add_child_window(width=-1, height=200, tag="txt_child",horizontal_scrollbar=True)
                         with dpg.group(horizontal=True):
+                            checkbox_original=dpg.add_checkbox(label="Original",callback=checkbox_changed)
                             checkbox_scale=dpg.add_checkbox(label="Scale",callback=checkbox_changed)
                             checkbox_distort=dpg.add_checkbox(label="Distort",callback=checkbox_changed)
-                            dpg.add_button(label="Start", callback=lambda:app.ResizeAndDistort(list_to_distort,
+                            dpg.add_button(label="Start", callback=lambda:app.ResizeAndDistort(list_to_distort,draw_parent=group_results,draw_tex_reg=texture_registry_calib,enable_original=dpg.get_value(checkbox_original),
                                 enable_scaling=dpg.get_value(checkbox_scale),target_height=dpg.get_value(target_height),target_width=dpg.get_value(target_width),scale_factor_x=dpg.get_value(target_scale_x),scale_factor_y=dpg.get_value(target_scale_y),
                                 enable_distortion=dpg.get_value(checkbox_distort),dstBC_k1=dpg.get_value(dst_k1),dstBC_k2=dpg.get_value(dst_k2),dstBC_k3=dpg.get_value(dst_k3),dstBC_p1=dpg.get_value(dst_p1),dstBC_p2=dpg.get_value(dst_p2)))
                         with dpg.group(horizontal=True):
@@ -54,8 +55,8 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             dpg.add_text("Image scaling settings")
                             target_height=dpg.add_input_int(label="Target height", default_value=0,min_value=0,min_clamped=True)
                             target_width=dpg.add_input_int(label="Target width", default_value=0,min_value=0,min_clamped=True)
-                            target_scale_x=dpg.add_input_float(label="Scale factor x", default_value=1,min_value=0,min_clamped=True)
-                            target_scale_y=dpg.add_input_float(label="Scale factor y", default_value=1,min_value=0,min_clamped=True)
+                            target_scale_x=dpg.add_input_float(label="Scale factor x", default_value=0.5,min_value=0,min_clamped=True)
+                            target_scale_y=dpg.add_input_float(label="Scale factor y", default_value=0.5,min_value=0,min_clamped=True)
                         with dpg.group(show=False) as group_distortion:
                             dpg.add_text("Distortion settings [Brown-Conrady]")
                             dst_k1=dpg.add_input_double(label="k1",default_value=0,step=0.0000001,step_fast=0.000001,format='%.8f')
@@ -71,7 +72,7 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             size_of_chessboard_squares=dpg.add_input_float(label="Size of chessboard squares [mm]", default_value=5,min_value=0,min_clamped=True)
                         #imageplot do wyświetlania, image button jako miniatury?
                     with dpg.child_window(horizontal_scrollbar=True) as mainColWind2:
-                        dpg.add_input_text(label="Text Input 1", source="string_value")
+                        dpg.add_text("Results")
                         with dpg.group() as group_results:
                             pass
 dpg.setup_dearpygui()
