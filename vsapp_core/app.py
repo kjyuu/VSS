@@ -30,6 +30,8 @@ def SaveAllImages(list_of_images,path):
             cv2.imwrite(os.path.join(path,str(id)+"_undistorted.png"),image)
         elif type=="undistorted_roi":
             cv2.imwrite(os.path.join(path,str(id)+"_undistorted_cropped.png"),image)
+        elif type=="undistorted_arrows":
+            cv2.imwrite(os.path.join(path,str(id)+"_undistorted_arrows.png"),image)
             
     return None
 def DrawImagesInParent(list_of_images,results_parent,results_tex_reg):
@@ -73,6 +75,11 @@ def DrawImagesInParent(list_of_images,results_parent,results_tex_reg):
             dpg.add_text("Undistorted Cropped",parent=group_results_vertical)
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
             dpg.add_image(t,parent=group_results_vertical)
+        elif type=="undistorted_arrows":
+            group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
+            dpg.add_text("Undistorted with Arrows",parent=group_results_vertical)
+            t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
+            dpg.add_image(t,parent=group_results_vertical)
     return None
 def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, results_parent,calib_tex_reg,calib_enable=False,enable_scaling=False,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
     if calib_enable==True:
@@ -90,10 +97,9 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
         objp *= size_of_chessboard_squares_mm # scale by size of squares
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001) # termination criteria for subpixel corner detection, max 30 iterations or epsilon 0.001
         list_of_images_to_draw=[] # first field is id, second is image, third is type
-        
+        found_cb_img_id=[]
         id=0
         for image in list_of_images: # loop through images
-            id+=1
             frameSize = (image.shape[1], image.shape[0]) # get frame size
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # convert to grayscale
             if enable_scaling:
@@ -107,6 +113,7 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
             # flags flags=cv2.CALIB_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE +cv2.CALIB_CB_FILTER_QUADS +cv2.CALIB_CB_CLUSTERING
             # If found, add object points and image points
             if ret:
+                found_cb_img_id.append(id)
                 objpoints.append(objp) # append object points
                 #imgpoints.append(corners) # append image points without refining them
                 corners2 = cv2.cornerSubPix(gray,corners, (5,5), (-1,-1), criteria)
@@ -123,42 +130,59 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                     list_of_images_to_draw.append((id,img_with_corners,'chessboard'))
             else:
                 print("No Checkerboard Found")
+            id+=1
+            
         # Calibrate camera
+        print(len(objpoints),len(imgpoints),len(found_cb_img_id),len(found_cb_img_id))
         if len(objpoints) == 0:
             print("No checkerboard found in images")
             return None, None
         else: 
             ret, cameraMatrix, distCoeffs, rvecs, tvecs, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors = cv2.calibrateCameraExtended(objpoints, imgpoints, frameSize, None, None) # returns camera matrix, distortion coefficients, rotation and translation vectors
             fovx, fovy, focalLength, principalPoint, aspectRatio=cv2.calibrationMatrixValues(cameraMatrix, frameSize, 4.8, 3.6)
-            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 1)
+            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 0) # number changes cutout of image
             map_undist_1,map_undist_2=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix, frameSize, cv2.CV_32FC1)
             id=0
-            for image in list_of_images:
+            idfound=0
+            for image in list_of_images: # this section draws the scaled distortion vectors on the undistorted image
+                print(idfound,len(found_cb_img_id),id)
+                #print(idfound,found_cb_img_id[idfound],id)
+                if found_cb_img_id[idfound]==id: # if current id is in list of found ids //works because found_cb_img_id is sorted
+                    print("image shape:",np.shape(image),id)
+                    undist = cv2.remap(image,map_undist_1,map_undist_2,cv2.INTER_CUBIC)
+                    #undist=cv2.rectangle(undist,roi,(255,0,0),2)
+                    undist_roi=undist[roi[1]:roi[1]+roi[3],roi[0]:roi[0]+roi[2]]
+                    print("id:",id,np.shape(imgpoints))
+                    pts_src=np.array(imgpoints[idfound][:],dtype=np.float64)
+                    pts_src=pts_src.reshape(-1,2)
+                    pts_undst=cv2.undistortImagePoints(pts_src, cameraMatrix, distCoeffs)
+                    pts_undst=pts_undst.reshape(-1,2)
+                    # draw arrow for every point in pts_src and pts_undst
+                    undistArrows=undist.copy()
+                    for i in range(pts_src.shape[0]):
+                        temp_point=np.array([pts_src[i,0],pts_src[i,1]])
+                        temp_point2=np.array([pts_undst[i,0],pts_undst[i,1]])
+                        scale=50
+                        point_diff=temp_point2-temp_point
+                        endpoint_scaled=temp_point+point_diff*scale
+                        #undistArrows=cv2.arrowedLine(undistArrows,(int(endpoint_scaled[0]),int(endpoint_scaled[1])),(int(temp_point[0]),int(temp_point[1])),(0,0,255),2,None,None,0.15)
+                        undistArrows=cv2.arrowedLine(undistArrows,(int(temp_point[0]),int(temp_point[1])),(int(endpoint_scaled[0]),int(endpoint_scaled[1])),(0,0,255),2,None,None,0.15)
+                    if enable_scaling:
+                        resized=ResizeImage(undist,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                        list_of_images_to_draw.append((id,resized,'undistorted'))
+                        resized_roi=ResizeImage(undist_roi,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                        list_of_images_to_draw.append((id,resized_roi,'undistorted_roi'))
+                        undistorrows=ResizeImage(undistArrows,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
+                        list_of_images_to_draw.append((id,undistorrows,'undistorted_arrows'))
+                    else:
+                        list_of_images_to_draw.append((id,undist,'undistorted'))
+                        list_of_images_to_draw.append((id,undist_roi,'undistorted_roi'))
+                        list_of_images_to_draw.append((id,undistArrows,'undistorted_arrows'))
+                    if idfound==len(found_cb_img_id)-1:
+                        break
+                    else:
+                        idfound+=1
                 id+=1
-                undist = cv2.remap(image,map_undist_1,map_undist_2,cv2.INTER_CUBIC)
-                undist=cv2.rectangle(undist,roi,(255,0,0),2)
-                undist_roi=undist[roi[1]:roi[1]+roi[3],roi[0]:roi[0]+roi[2]]
-                pts_src=np.array(imgpoints[id-1][:],dtype=np.float64)
-                pts_src=pts_src.reshape(-1,2)
-                pts_undst=cv2.undistortImagePoints(pts_src, cameraMatrix, distCoeffs)
-                pts_undst=pts_undst.reshape(-1,2)
-                # draw arrow for every point in pts_src and pts_undst
-                for i in range(pts_src.shape[0]):
-                    temp_point=np.array([pts_src[i,0],pts_src[i,1]])
-                    temp_point2=np.array([pts_undst[i,0],pts_undst[i,1]])
-                    scale=50
-                    point_diff=temp_point2-temp_point
-                    endpoint_scaled=temp_point+point_diff*scale
-                    undist=cv2.arrowedLine(undist,(int(temp_point[0]),int(temp_point[1])),(int(endpoint_scaled[0]),int(endpoint_scaled[1])),(0,0,255),2)
-                    
-                if enable_scaling:
-                    resized=ResizeImage(undist,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
-                    list_of_images_to_draw.append((id,resized,'undistorted'))
-                    resized_roi=ResizeImage(undist_roi,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
-                    list_of_images_to_draw.append((id,resized_roi,'undistorted_roi'))
-                else:
-                    list_of_images_to_draw.append((id,undist,'undistorted'))
-                    list_of_images_to_draw.append((id,undist_roi,'undistorted_roi'))
         DrawImagesInParent(list_of_images_to_draw,results_parent,calib_tex_reg)
             
         return cameraMatrix, distCoeffs
