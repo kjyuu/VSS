@@ -55,7 +55,7 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                         with dpg.group(horizontal=True):
                             checkbox_calibrate=dpg.add_checkbox(label="Calibrate",callback=checkbox_changed)
                             dpg.add_button(label="Calibrate", callback=lambda:app.Calibrate(list_of_filepaths=list_to_distort,chessboardSize=(dpg.get_value(chessboard_squares_h)-1,dpg.get_value(chessboard_squares_w)-1),size_of_chessboard_squares_mm=dpg.get_value(size_of_chessboard_squares),results_parent=group_results,calib_tex_reg=texture_registry_calib,calib_enable=dpg.get_value(checkbox_calibrate),
-                                                                                            enable_scaling=dpg.get_value(checkbox_scale),target_height=dpg.get_value(target_height),target_width=dpg.get_value(target_width),scale_factor_x=dpg.get_value(target_scale_x),scale_factor_y=dpg.get_value(target_scale_y)))
+                                                                                            enable_scaling=dpg.get_value(checkbox_scale),target_height=dpg.get_value(target_height),target_width=dpg.get_value(target_width),scale_factor_x=dpg.get_value(target_scale_x),scale_factor_y=dpg.get_value(target_scale_y),arrow_scale=dpg.get_value(arrow_scale_val)))
                             dpg.add_button(label="Debug", callback=debug)
                         with dpg.group(show=False) as group_scaling: 
                             dpg.add_text("Image scaling settings")
@@ -76,6 +76,7 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             chessboard_squares_h=dpg.add_input_int(label="Number of rows", default_value=6,min_value=0,min_clamped=True)
                             chessboard_squares_w=dpg.add_input_int(label="Number of columns", default_value=7,min_value=0,min_clamped=True)
                             size_of_chessboard_squares=dpg.add_input_float(label="Size of chessboard squares [mm]", default_value=5,min_value=0,min_clamped=True)
+                            arrow_scale_val=dpg.add_input_float(label="Arrow scale", default_value=50)
                         #imageplot do wyświetlania, image button jako miniatury?
                     with dpg.child_window(horizontal_scrollbar=True) as mainColWind2:
                         dpg.add_text("Results")

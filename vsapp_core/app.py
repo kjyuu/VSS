@@ -81,7 +81,7 @@ def DrawImagesInParent(list_of_images,results_parent,results_tex_reg):
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
             dpg.add_image(t,parent=group_results_vertical)
     return None
-def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, results_parent,calib_tex_reg,calib_enable=False,enable_scaling=False,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0):
+def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, results_parent,calib_tex_reg,calib_enable=False,enable_scaling=False,target_height=0,target_width=0,scale_factor_x=0,scale_factor_y=0,arrow_scale=1.0):
     if calib_enable==True:
         # implement cv2 calibration on list of images and return camera matrix and distortion coefficients
         objpoints = []  # 3D points in real world space
@@ -140,8 +140,10 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
         else: 
             ret, cameraMatrix, distCoeffs, rvecs, tvecs, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors = cv2.calibrateCameraExtended(objpoints, imgpoints, frameSize, None, None) # returns camera matrix, distortion coefficients, rotation and translation vectors
             fovx, fovy, focalLength, principalPoint, aspectRatio=cv2.calibrationMatrixValues(cameraMatrix, frameSize, 4.8, 3.6)
-            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 0) # number changes cutout of image
+            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 1) # number changes cutout of image
             map_undist_1,map_undist_2=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix, frameSize, cv2.CV_32FC1)
+            newCameraMatrix2, roi2 = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 0) # number changes cutout of image
+            map_undist_3,map_undist_4=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix2, frameSize, cv2.CV_32FC1)
             id=0
             idfound=0
             for image in list_of_images: # this section draws the scaled distortion vectors on the undistorted image
@@ -158,13 +160,12 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                     pts_undst=cv2.undistortImagePoints(pts_src, cameraMatrix, distCoeffs)
                     pts_undst=pts_undst.reshape(-1,2)
                     # draw arrow for every point in pts_src and pts_undst
-                    undistArrows=undist.copy()
+                    undistArrows = cv2.remap(image,map_undist_3,map_undist_4,cv2.INTER_CUBIC)
                     for i in range(pts_src.shape[0]):
                         temp_point=np.array([pts_src[i,0],pts_src[i,1]])
                         temp_point2=np.array([pts_undst[i,0],pts_undst[i,1]])
-                        scale=50
                         point_diff=temp_point2-temp_point
-                        endpoint_scaled=temp_point+point_diff*scale
+                        endpoint_scaled=temp_point+point_diff*arrow_scale
                         #undistArrows=cv2.arrowedLine(undistArrows,(int(endpoint_scaled[0]),int(endpoint_scaled[1])),(int(temp_point[0]),int(temp_point[1])),(0,0,255),2,None,None,0.15)
                         undistArrows=cv2.arrowedLine(undistArrows,(int(temp_point[0]),int(temp_point[1])),(int(endpoint_scaled[0]),int(endpoint_scaled[1])),(0,0,255),2,None,None,0.15)
                     if enable_scaling:
