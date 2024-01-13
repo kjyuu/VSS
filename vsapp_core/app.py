@@ -39,44 +39,36 @@ def DrawImagesInParent(list_of_images,results_parent,results_tex_reg):
     group_results_vertical=[]
     #sort list of images by id
     dpg.add_button(label="Save",parent=results_parent, callback=lambda:SaveAllImages(list_of_images,"ignored\\results"))
-    print("unsorted:\n", [(t[0], t[2]) for t in list_of_images])
     list_of_images.sort(key=lambda x: x[0])
-    print("sorted:\n", [(t[0], t[2]) for t in list_of_images])
     for i in range(len(list_of_images)):
         id,image,type=list_of_images[i]
         if type=="original": # original will always be new image, add groups here
             group_results_horizontal=dpg.add_group(horizontal=True,parent=results_parent)
             group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
-            print("drawing original image")
             dpg.add_text("Original",parent=group_results_vertical)
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
             dpg.add_image(t,parent=group_results_vertical)
         elif type=="scaled":
-            print("drawing scaled image")
             group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
             dpg.add_text("Scaled",parent=group_results_vertical)
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
             dpg.add_image(t,parent=group_results_vertical)
         elif type=="distorted":
-            print("drawing distorted image")
             group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
             dpg.add_text("Distorted",parent=group_results_vertical)
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
             dpg.add_image(t,parent=group_results_vertical)
         elif type=="chessboard":
-            print("drawing chessboard image")
             group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
             dpg.add_text("Found chessboard corners",parent=group_results_vertical)
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
             dpg.add_image(t,parent=group_results_vertical)
         elif type=="undistorted":
-            print("drawing undistorted image")
             group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
             dpg.add_text("Undistorted",parent=group_results_vertical)
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
             dpg.add_image(t,parent=group_results_vertical)
         elif type=="undistorted_roi":
-            print("drawing undistorted cropped image")
             group_results_vertical=dpg.add_group(horizontal=False,parent=group_results_horizontal)
             dpg.add_text("Undistorted Cropped",parent=group_results_vertical)
             t=dpg.add_raw_texture(width=image.shape[1], height=image.shape[0], default_value=conv_img2raw(image,image.shape[1],image.shape[0]),format=dpg.mvFormat_Float_rgb,parent=results_tex_reg)
@@ -106,11 +98,9 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # convert to grayscale
             if enable_scaling:
                 resized=ResizeImage(image,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
-                list_of_images_to_draw.append((id,resized,'original'))#resized counted as original only for scaling purposes for 
-                print("append:",id,resized.shape,'original')
+                list_of_images_to_draw.append((id,resized,'original'))#resized counted as original only for scaling purposes
             else:
                 list_of_images_to_draw.append((id,image,'original'))
-                print("append:",id,image.shape,'original')
                 
             # Find the chessboard corners
             ret, corners = cv2.findChessboardCorners(gray, chessboardSize, None)
@@ -120,20 +110,17 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                 objpoints.append(objp) # append object points
                 #imgpoints.append(corners) # append image points without refining them
                 corners2 = cv2.cornerSubPix(gray,corners, (5,5), (-1,-1), criteria)
-                imgpoints.append(corners2)
+                imgpoints.append(corners2) # [imageNumber][cornerNumber][?][x,y]
                 imgcopy=image.copy()
                 img_with_corners = cv2.drawChessboardCorners(imgcopy, chessboardSize, corners2, ret) # draw corners on image
-                print("drawchessboardcorners")
                 #img_with_corners=cv2.circle(img_with_corners,(int(round(imgpoints[-1][0][0][0])),int(round(imgpoints[-1][0][0][1]))),50,(0,0,255),-1)
                 #img_with_corners=cv2.line(img_with_corners,(int(round(imgpoints[-1][-1][0][0])),int(round(imgpoints[-1][-1][0][1]))),(int(round(imgpoints[-1][0][0][0])),int(round(imgpoints[-1][0][0][1]))),(0,255,0),5)
                 #img_with_corners=cv2.putText(img_with_corners,"Hi",(int(round(imgpoints[-1][-1][0][0]))-50,int(round(imgpoints[-1][-1][0][1]))+50),cv2.FONT_HERSHEY_SIMPLEX,1,(0,0,0),2,cv2.LINE_AA)
                 if enable_scaling:
                     resized=ResizeImage(img_with_corners,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
                     list_of_images_to_draw.append((id,resized,'chessboard'))
-                    print("append:",id,resized.shape,'chessboard')
                 else:
                     list_of_images_to_draw.append((id,img_with_corners,'chessboard'))
-                    print("append:",id,img_with_corners.shape,'chessboard')
             else:
                 print("No Checkerboard Found")
         # Calibrate camera
@@ -142,11 +129,8 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
             return None, None
         else: 
             ret, cameraMatrix, distCoeffs, rvecs, tvecs, stdDeviationsIntrinsics, stdDeviationsExtrinsics, perViewErrors = cv2.calibrateCameraExtended(objpoints, imgpoints, frameSize, None, None) # returns camera matrix, distortion coefficients, rotation and translation vectors
-            #print("ret:", ret, "camera matrix:\n", cameraMatrix)#, "\ndistortion coefficients: ", distCoeffs, "\nrotation vectors: ", rvecs, "\ntranslation vectors: ", tvecs, "\nstdDeviationsIntrinsics: ", stdDeviationsIntrinsics, "\nstdDeviationsExtrinsics: ", stdDeviationsExtrinsics, "\nperViewErrors: ", perViewErrors)
-            fovx, fovy, focalLength, principalPoint, aspectRatio=cv2.calibrationMatrixValues(cameraMatrix, frameSize, 4.8, 3.6	)
-            print("fovx:", fovx, "fovy:", fovy, "focalLength:", focalLength, "principalPoint:", principalPoint, "aspectRatio:", aspectRatio)
-            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 1) #test bool setting 
-            
+            fovx, fovy, focalLength, principalPoint, aspectRatio=cv2.calibrationMatrixValues(cameraMatrix, frameSize, 4.8, 3.6)
+            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 1)
             map_undist_1,map_undist_2=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix, frameSize, cv2.CV_32FC1)
             id=0
             for image in list_of_images:
@@ -154,18 +138,27 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                 undist = cv2.remap(image,map_undist_1,map_undist_2,cv2.INTER_CUBIC)
                 undist=cv2.rectangle(undist,roi,(255,0,0),2)
                 undist_roi=undist[roi[1]:roi[1]+roi[3],roi[0]:roi[0]+roi[2]]
+                pts_src=np.array(imgpoints[id-1][:],dtype=np.float64)
+                pts_src=pts_src.reshape(-1,2)
+                pts_undst=cv2.undistortImagePoints(pts_src, cameraMatrix, distCoeffs)
+                pts_undst=pts_undst.reshape(-1,2)
+                # draw arrow for every point in pts_src and pts_undst
+                for i in range(pts_src.shape[0]):
+                    temp_point=np.array([pts_src[i,0],pts_src[i,1]])
+                    temp_point2=np.array([pts_undst[i,0],pts_undst[i,1]])
+                    scale=50
+                    point_diff=temp_point2-temp_point
+                    endpoint_scaled=temp_point+point_diff*scale
+                    undist=cv2.arrowedLine(undist,(int(temp_point[0]),int(temp_point[1])),(int(endpoint_scaled[0]),int(endpoint_scaled[1])),(0,0,255),2)
+                    
                 if enable_scaling:
                     resized=ResizeImage(undist,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
                     list_of_images_to_draw.append((id,resized,'undistorted'))
-                    print("append:",id,resized.shape,'undistorted')
                     resized_roi=ResizeImage(undist_roi,target_height=target_height,target_width=target_width,scale_factor_x=scale_factor_x,scale_factor_y=scale_factor_y)
                     list_of_images_to_draw.append((id,resized_roi,'undistorted_roi'))
-                    print("append:",id,resized_roi.shape,'undistorted_roi')
                 else:
                     list_of_images_to_draw.append((id,undist,'undistorted'))
                     list_of_images_to_draw.append((id,undist_roi,'undistorted_roi'))
-                    print("append:",id,undist.shape,'undistorted')
-                    print("append:",id,undist_roi.shape,'undistorted_roi')
         DrawImagesInParent(list_of_images_to_draw,results_parent,calib_tex_reg)
             
         return cameraMatrix, distCoeffs

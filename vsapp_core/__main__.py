@@ -24,6 +24,11 @@ def outputSelectedForDistortion(selected_files):
     for file in selected_files:
         dpg.add_text(file, parent=outputwindow)
         list_to_distort.append(file)
+def debug():
+    print("debug")
+    app.Calibrate(list_of_filepaths=list_to_distort,chessboardSize=(dpg.get_value(chessboard_squares_h)-1,dpg.get_value(chessboard_squares_w)-1),size_of_chessboard_squares_mm=dpg.get_value(size_of_chessboard_squares),results_parent=group_results,calib_tex_reg=texture_registry_calib,calib_enable=dpg.get_value(checkbox_calibrate),
+                                                                                            enable_scaling=dpg.get_value(checkbox_scale),target_height=dpg.get_value(target_height),target_width=dpg.get_value(target_width),scale_factor_x=dpg.get_value(target_scale_x),scale_factor_y=dpg.get_value(target_scale_y))
+    
 fd = FileDialog(callback=outputSelectedForDistortion, show_dir_size=False, modal=False, allow_drag=False,no_resize=False,default_path='assets\\images')
 app.addFontRegistry()
 
@@ -51,6 +56,7 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             checkbox_calibrate=dpg.add_checkbox(label="Calibrate",callback=checkbox_changed)
                             dpg.add_button(label="Calibrate", callback=lambda:app.Calibrate(list_of_filepaths=list_to_distort,chessboardSize=(dpg.get_value(chessboard_squares_h)-1,dpg.get_value(chessboard_squares_w)-1),size_of_chessboard_squares_mm=dpg.get_value(size_of_chessboard_squares),results_parent=group_results,calib_tex_reg=texture_registry_calib,calib_enable=dpg.get_value(checkbox_calibrate),
                                                                                             enable_scaling=dpg.get_value(checkbox_scale),target_height=dpg.get_value(target_height),target_width=dpg.get_value(target_width),scale_factor_x=dpg.get_value(target_scale_x),scale_factor_y=dpg.get_value(target_scale_y)))
+                            dpg.add_button(label="Debug", callback=debug)
                         with dpg.group(show=False) as group_scaling: 
                             dpg.add_text("Image scaling settings")
                             target_height=dpg.add_input_int(label="Target height", default_value=0,min_value=0,min_clamped=True)
@@ -65,7 +71,7 @@ with dpg.window(tag="Primary Window",no_scroll_with_mouse=True,no_scrollbar=True
                             dst_p1=dpg.add_input_double(label="p1",default_value=0,step=0.00001,step_fast=0.0001,format='%.6f')
                             dst_p2=dpg.add_input_double(label="p2",default_value=0,step=0.00001,step_fast=0.0001,format='%.6f')
                             pass
-                        with dpg.group(show=False) as group_calibration: 
+                        with dpg.group(show=False) as group_calibration:
                             dpg.add_text("Camera Calibration settings")
                             chessboard_squares_h=dpg.add_input_int(label="Number of rows", default_value=6,min_value=0,min_clamped=True)
                             chessboard_squares_w=dpg.add_input_int(label="Number of columns", default_value=7,min_value=0,min_clamped=True)
