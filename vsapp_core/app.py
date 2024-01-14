@@ -87,18 +87,18 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
         objpoints = []  # 3D points in real world space
         imgpoints = []  # 2D points in image plane
         list_of_images = []
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001) # termination criteria for subpixel corner detection, max 30 iterations or epsilon 0.001
+        objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32) # chessboardSize[0] is height, chessboardSize[1] is width
+        objp[:, :2] = np.mgrid[0:chessboardSize[0], 0:chessboardSize[1]].T.reshape(-1, 2) # x,y coordinates, T.reshape(-1,2) flattens the array
+        objp *= size_of_chessboard_squares_mm # scale by size of squares
+        list_of_images_to_draw=[] # first field is id, second is image, third is type
+        found_cb_img_id=[]
+        id=0
         for filepath in list_of_filepaths:
             if os.path.splitext(filepath)[1] in ['.jpg', '.png', '.jpeg', '.bmp','.tif']:
                 image = cv2.imread(filepath)
                 print(os.path.basename(filepath), "is an image file with", image.shape[1], "x", image.shape[0], "pixels")
                 list_of_images.append(image)
-        objp = np.zeros((chessboardSize[0] * chessboardSize[1], 3), np.float32) # chessboardSize[0] is height, chessboardSize[1] is width
-        objp[:, :2] = np.mgrid[0:chessboardSize[0], 0:chessboardSize[1]].T.reshape(-1, 2) # x,y coordinates, T.reshape(-1,2) flattens the array
-        objp *= size_of_chessboard_squares_mm # scale by size of squares
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001) # termination criteria for subpixel corner detection, max 30 iterations or epsilon 0.001
-        list_of_images_to_draw=[] # first field is id, second is image, third is type
-        found_cb_img_id=[]
-        id=0
         for image in list_of_images: # loop through images
             frameSize = (image.shape[1], image.shape[0]) # get frame size
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # convert to grayscale
@@ -109,7 +109,7 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
                 list_of_images_to_draw.append((id,image,'original'))
                 
             # Find the chessboard corners
-            ret, corners = cv2.findChessboardCorners(gray, chessboardSize, None)
+            ret, corners = cv2.findChessboardCorners(gray, chessboardSize)
             # flags flags=cv2.CALIB_CB_ADAPTIVE_THRESH +cv2.CALIB_CB_FAST_CHECK +cv2.CALIB_CB_NORMALIZE_IMAGE +cv2.CALIB_CB_FILTER_QUADS +cv2.CALIB_CB_CLUSTERING
             # If found, add object points and image points
             if ret:
@@ -144,17 +144,19 @@ def Calibrate(list_of_filepaths, chessboardSize, size_of_chessboard_squares_mm, 
             map_undist_1,map_undist_2=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix, frameSize, cv2.CV_32FC1)
             newCameraMatrix2, roi2 = cv2.getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, frameSize, 0) # number changes cutout of image
             map_undist_3,map_undist_4=cv2.initUndistortRectifyMap(cameraMatrix, distCoeffs, None, newCameraMatrix2, frameSize, cv2.CV_32FC1)
+            print("ret:",ret,"\ncameraMatrix:\n",cameraMatrix,"\ndistCoeffs:\n",distCoeffs)#,"\nrvecs:\n",rvecs,"\ntvecs:\n",tvecs,"\nstdDeviationsIntrinsics:\n",stdDeviationsIntrinsics,"\nstdDeviationsExtrinsics:\n",stdDeviationsExtrinsics,"\nperViewErrors:\n",perViewErrors)
+            print("fovx:",fovx,"\nfovy:",fovy,"\nfocalLength:",focalLength,"\nprincipalPoint:",principalPoint,"\naspectRatio:",aspectRatio)
+            print("newCameraMatrix:\n",newCameraMatrix,"\nroi:",roi)
+            print("newCameraMatrix2:\n",newCameraMatrix2,"\nroi2:",roi2)
             id=0
             idfound=0
             for image in list_of_images: # this section draws the scaled distortion vectors on the undistorted image
-                print(idfound,len(found_cb_img_id),id)
                 #print(idfound,found_cb_img_id[idfound],id)
                 if found_cb_img_id[idfound]==id: # if current id is in list of found ids //works because found_cb_img_id is sorted
                     print("image shape:",np.shape(image),id)
                     undist = cv2.remap(image,map_undist_1,map_undist_2,cv2.INTER_CUBIC)
                     #undist=cv2.rectangle(undist,roi,(255,0,0),2)
                     undist_roi=undist[roi[1]:roi[1]+roi[3],roi[0]:roi[0]+roi[2]]
-                    print("id:",id,np.shape(imgpoints))
                     pts_src=np.array(imgpoints[idfound][:],dtype=np.float64)
                     pts_src=pts_src.reshape(-1,2)
                     pts_undst=cv2.undistortImagePoints(pts_src, cameraMatrix, distCoeffs)
